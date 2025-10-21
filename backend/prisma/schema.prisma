@@ -1,15 +1,58 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../generated/prisma"
 }
 
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+model User {
+  id    Int     @id @default(autoincrement())
+  email String  @unique
+  name  String?
+  orders Order[]
+}
+
+model MenuItem {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?  @db.Text
+  price       Decimal    @db.Decimal(6, 2)
+  isAvailable Boolean  @default(true)
+  orderItems OrderItem[]
+}
+
+model Order {
+  id        Int         @id @default(autoincrement())
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  status    OrderStatus @default(PENDING) 
+  total     Decimal       @db.Decimal(8, 2)
+  
+  userId    Int
+  user      User        @relation(fields: [userId], references: [id])
+  
+  items     OrderItem[]
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  READY
+  COMPLETED
+  CANCELLED
+}
+
+model OrderItem {
+  id          Int      @id @default(autoincrement())
+  quantity    Int
+  
+  orderId     Int
+  order       Order    @relation(fields: [orderId], references: [id])
+  
+  menuItemId  Int
+  menuItem    MenuItem @relation(fields: [menuItemId], references: [id])
+  
+  @@unique([orderId, menuItemId]) 
 }
