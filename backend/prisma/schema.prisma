@@ -7,11 +7,18 @@ generator client {
   provider = "prisma-client-js"
 }
 
+enum UserRole {
+  CUSTOMER
+  VENDOR
+}
+
 model User {
-  id    Int     @id @default(autoincrement())
-  email String  @unique
-  name  String?
-  orders Order[]
+  id            Int         @id @default(autoincrement())
+  email         String      @unique
+  passwordHash  String      
+  name          String?
+  role          UserRole    @default(CUSTOMER) 
+  orders        Order[]
 }
 
 model MenuItem {
