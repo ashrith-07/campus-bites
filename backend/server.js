@@ -4,7 +4,8 @@ const dotenv = require('dotenv');
 
 
 const authRouter = require('./src/routes/auth'); 
-
+const menuRouter = require('./src/routes/menu');
+const orderRouter = require('./src/routes/orders');
 
 dotenv.config();
 
@@ -23,6 +24,8 @@ app.use(express.json());
 
 
 app.use('/api/auth', authRouter);
+app.use('/api/menu', menuRouter);
+app.use('/api/orders', orderRouter);
 
 
 app.get('/api/status', (req, res) => {
