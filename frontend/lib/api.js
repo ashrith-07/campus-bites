@@ -123,3 +123,39 @@ export const api = {
     return response.json();
   },
 };
+
+// const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+
+// export const api = {
+//   async signup(name, email, password) {
+//     const res = await fetch(`${API_URL}/auth/signup`, {
+//       method: 'POST',
+//       headers: { 'Content-Type': 'application/json' },
+//       body: JSON.stringify({ name, email, password }),
+//     });
+//     if (!res.ok) {
+//       const error = await res.json();
+//       throw new Error(error.message || 'Signup failed');
+//     }
+//     return res.json();
+//   },
+
+//   async login(email, password) {
+//     const res = await fetch(`${API_URL}/auth/login`, {
+//       method: 'POST',
+//       headers: { 'Content-Type': 'application/json' },
+//       body: JSON.stringify({ email, password }),
+//     });
+//     if (!res.ok) {
+//       const error = await res.json();
+//       throw new Error(error.message || 'Login failed');
+//     }
+//     return res.json();
+//   },
+
+//   async getMenuItems() {
+//     const res = await fetch(`${API_URL}/menu`);
+//     if (!res.ok) throw new Error('Failed to fetch menu items');
+//     return res.json();
+//   },
+// };

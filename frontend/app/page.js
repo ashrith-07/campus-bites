@@ -1,65 +1,101 @@
-import Image from "next/image";
+'use client';
+import { useState, useEffect } from 'react';
+import Navbar from '@/components/ui/Navbar';
+import MenuCard from '@/components/ui/MenuCard';
+import CartSidebar from '@/components/ui/CartSidebar';
+import { api } from '@/lib/api';
 
-export default function Home() {
+const categories = ['All', 'Pizza', 'Rolls', 'Beverages', 'Desserts', 'Sandwiches', 'Snacks'];
+
+export default function HomePage() {
+  const [menuItems, setMenuItems] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    fetchMenuItems();
+  }, []);
+
+  const fetchMenuItems = async () => {
+    try {
+      setLoading(true);
+      const data = await api.getMenuItems();
+      setMenuItems(data);
+    } catch (err) {
+      setError('Failed to load menu items');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredItems = selectedCategory === 'All'
+    ? menuItems
+    : menuItems.filter(item => item.category === selectedCategory);
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.js file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <div className="min-h-screen bg-background">
+      <Navbar/>
+      
+      {/* Hero Section */}
+      <section className="bg-gradient-to-b from-muted to-background py-16">
+        <div className="max-w-7xl mx-auto px-6 text-center">
+          <h2 className="font-serif text-5xl font-bold text-foreground mb-4">
+            Elevated Campus Dining
+          </h2>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Order from anywhere on campus, pick up fresh when ready
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      </section>
+
+      {/* Category Filter */}
+      <section className="max-w-7xl mx-auto px-6 py-8">
+        <div className="flex gap-3 overflow-x-auto pb-4 scrollbar-hide">
+          {categories.map((category) => (
+            <button
+              key={category}
+              onClick={() => setSelectedCategory(category)}
+              className={`px-6 py-3 rounded-full text-sm font-semibold whitespace-nowrap transition-all ${
+                selectedCategory === category
+                  ? 'bg-secondary text-secondary-foreground shadow-lg scale-105'
+                  : 'bg-muted text-foreground hover:bg-border'
+              }`}
+            >
+              {category}
+            </button>
+          ))}
         </div>
-      </main>
+      </section>
+
+      {/* Menu Items Grid */}
+      <section className="max-w-7xl mx-auto px-6 pb-16">
+        {loading ? (
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-secondary border-t-transparent mx-auto"></div>
+            <p className="text-muted-foreground mt-4">Loading delicious items...</p>
+          </div>
+        ) : error ? (
+          <div className="text-center py-12">
+            <p className="text-destructive">{error}</p>
+          </div>
+        ) : filteredItems.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground text-lg">No items found in this category</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredItems.map((item) => (
+              <MenuCard key={item.id} item={item} />
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* Cart Sidebar */}
+      <CartSidebar/>
     </div>
   );
 }
+
