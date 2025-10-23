@@ -7,11 +7,7 @@ import Link from 'next/link';
 export default function SignupPage() {
   const router = useRouter();
   const { signup } = useAuth();
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: ''
-  });
+  const [formData, setFormData] = useState({ name: '', email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -21,24 +17,18 @@ export default function SignupPage() {
     setLoading(true);
 
     const result = await signup(formData.name, formData.email, formData.password);
-    
-    if (result.success) {
-      router.push('/');
-    } else {
-      setError(result.error);
-    }
-    
+    if (result.success) router.push('/');
+    else setError(result.error);
+
     setLoading(false);
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
-      <div className="bg-white rounded-2xl shadow-xl p-10 w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12">
+      <div className="bg-card w-full max-w-md shadow-elegant rounded-2xl p-8">
         <div className="text-center mb-8">
-          <h1 className="font-serif text-4xl font-bold text-gray-900 mb-2">
-            Join Campus Bites
-          </h1>
-          <p className="text-gray-600">
+          <h1 className="text-3xl font-serif text-foreground">Join Campus Bites</h1>
+          <p className="text-muted-foreground">
             Create an account to start ordering delicious meals
           </p>
         </div>
@@ -49,62 +39,64 @@ export default function SignupPage() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-gray-700 font-medium mb-2">
-              Full Name
-            </label>
+            <label className="block text-foreground mb-1">Full Name</label>
             <input
               type="text"
               value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
               placeholder="John Doe"
               required
-              className="w-full px-4 py-3 border-2 border-primary rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+              className="w-full px-4 py-3 border border-input rounded-lg focus:ring-2 focus:ring-secondary transition-elegant"
             />
           </div>
 
           <div>
-            <label className="block text-gray-700 font-medium mb-2">
-              Email
-            </label>
+            <label className="block text-foreground mb-1">Email</label>
             <input
               type="email"
               value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, email: e.target.value })
+              }
               placeholder="your.email@university.edu"
               required
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+              className="w-full px-4 py-3 border border-input rounded-lg focus:ring-2 focus:ring-secondary transition-elegant"
             />
           </div>
 
           <div>
-            <label className="block text-gray-700 font-medium mb-2">
-              Password
-            </label>
+            <label className="block text-foreground mb-1">Password</label>
             <input
               type="password"
               value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, password: e.target.value })
+              }
               placeholder="••••••••"
               required
-              minLength={6}
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+              className="w-full px-4 py-3 border border-input rounded-lg focus:ring-2 focus:ring-secondary transition-elegant"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-gray-900 text-white py-3 rounded-xl font-semibold hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-primary text-primary-foreground py-3 rounded-lg font-medium hover:bg-primary/90 transition-elegant disabled:opacity-50"
           >
             {loading ? 'Creating Account...' : 'Create Account'}
           </button>
         </form>
 
-        <p className="text-center mt-6 text-gray-600">
+        <p className="text-center mt-6 text-muted-foreground">
           Already have an account?{' '}
-          <Link href="/auth/login" className="text-primary font-semibold hover:underline">
+          <Link
+            href="/auth/login"
+            className="text-secondary hover:underline transition-elegant"
+          >
             Sign in
           </Link>
         </p>
