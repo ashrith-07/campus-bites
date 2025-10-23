@@ -6,6 +6,8 @@ const dotenv = require('dotenv');
 const authRouter = require('./src/routes/auth'); 
 const menuRouter = require('./src/routes/menu');
 const orderRouter = require('./src/routes/orders');
+const userRouter = require('./src/routes/users');
+const uploadRouter = require('./src/routes/upload');
 
 dotenv.config();
 
@@ -26,6 +28,8 @@ app.use(express.json());
 app.use('/api/auth', authRouter);
 app.use('/api/menu', menuRouter);
 app.use('/api/orders', orderRouter);
+app.use('/api/users', userRouter);
+app.use('/api/upload', uploadRouter);
 
 
 app.get('/api/status', (req, res) => {
