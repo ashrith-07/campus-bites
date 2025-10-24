@@ -15,47 +15,14 @@ const {
 
 const router = express.Router(); 
 
+// Customer routes
+router.post('/checkout', authenticateToken, initiateCheckout);
+router.post('/confirm', authenticateToken, confirmOrder);
+router.get('/stream', authenticateToken, connectToOrderStream);
+router.get('/', authenticateToken, getOrders);
+router.get('/:id', authenticateToken, getOrderById);
 
-router.post(
-  '/checkout', 
-  authenticateToken, 
-  initiateCheckout
-);
-
-router.post(
-  '/confirm', 
-  authenticateToken, 
-  confirmOrder
-);
-
-
-// --- SSE Route (Customer connects to receive status updates) ---
-router.get(
-  '/stream', 
-  authenticateToken, 
-  connectToOrderStream
-);
-
-
-router.get(
-  '/', 
-  authenticateToken, 
-  getOrders
-);
-
-
-router.get(
-  '/:id', 
-  authenticateToken, 
-  getOrderById
-);
-
-router.put(
-  '/:id', 
-  authenticateToken, 
-  checkVendorRole, 
-  updateOrder
-);
-
+// Vendor routes
+router.put('/:id', authenticateToken, checkVendorRole, updateOrder);
 
 module.exports = router;

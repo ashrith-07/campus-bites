@@ -1,6 +1,5 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
-// Helper to get token
 const getToken = () => {
   if (typeof window !== 'undefined') {
     return localStorage.getItem('token');
@@ -8,10 +7,15 @@ const getToken = () => {
   return null;
 };
 
-// Generic fetch wrapper
 async function apiFetch(endpoint, options = {}) {
   const token = getToken();
   
+  console.log('API Request:', {
+    endpoint,
+    method: options.method || 'GET',
+    hasToken: !!token
+  });
+
   const config = {
     ...options,
     headers: {
@@ -23,18 +27,21 @@ async function apiFetch(endpoint, options = {}) {
 
   const response = await fetch(`${API_URL}${endpoint}`, config);
 
-  // Handle errors
+  console.log('API Response:', {
+    status: response.status,
+    ok: response.ok
+  });
+
   if (!response.ok) {
     const error = await response.json().catch(() => ({ error: 'Request failed' }));
+    console.error('API Error:', error);
     throw new Error(error.error || `Error: ${response.status}`);
   }
 
   return response.json();
 }
 
-// API methods
 export const api = {
-  // Auth
   signup: (name, email, password) => 
     apiFetch('/auth/signup', {
       method: 'POST',
@@ -47,12 +54,10 @@ export const api = {
       body: JSON.stringify({ email, password }),
     }),
 
-  // Menu
   getMenuItems: () => apiFetch('/menu/items'),
   
   getMenuItem: (id) => apiFetch(`/menu/items/${id}`),
 
-  // Orders
   checkout: (totalAmount, items) =>
     apiFetch('/orders/checkout', {
       method: 'POST',
@@ -75,7 +80,6 @@ export const api = {
       body: JSON.stringify({ status }),
     }),
 
-  // User
   getProfile: () => apiFetch('/users/profile'),
 
   updateProfile: (name) =>
@@ -84,7 +88,6 @@ export const api = {
       body: JSON.stringify({ name }),
     }),
 
-  // Vendor - Menu Management
   createMenuItem: (data) =>
     apiFetch('/menu/items', {
       method: 'POST',
@@ -102,7 +105,6 @@ export const api = {
       method: 'DELETE',
     }),
 
-  // Upload
   uploadImage: async (file) => {
     const formData = new FormData();
     formData.append('image', file);
@@ -123,39 +125,3 @@ export const api = {
     return response.json();
   },
 };
-
-// const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-
-// export const api = {
-//   async signup(name, email, password) {
-//     const res = await fetch(`${API_URL}/auth/signup`, {
-//       method: 'POST',
-//       headers: { 'Content-Type': 'application/json' },
-//       body: JSON.stringify({ name, email, password }),
-//     });
-//     if (!res.ok) {
-//       const error = await res.json();
-//       throw new Error(error.message || 'Signup failed');
-//     }
-//     return res.json();
-//   },
-
-//   async login(email, password) {
-//     const res = await fetch(`${API_URL}/auth/login`, {
-//       method: 'POST',
-//       headers: { 'Content-Type': 'application/json' },
-//       body: JSON.stringify({ email, password }),
-//     });
-//     if (!res.ok) {
-//       const error = await res.json();
-//       throw new Error(error.message || 'Login failed');
-//     }
-//     return res.json();
-//   },
-
-//   async getMenuItems() {
-//     const res = await fetch(`${API_URL}/menu`);
-//     if (!res.ok) throw new Error('Failed to fetch menu items');
-//     return res.json();
-//   },
-// };

@@ -1,102 +1,111 @@
 const prisma = require('../utils/prisma');
 
-// --- SSE Cache for Connected Clients ---
-// Store connections by userId (Key: UserId, Value: Response object)
-const clients = new Map(); 
-// ---------------------------------------
+// SSE clients storage
+const clients = new Map();
 
-const INITIAL_ORDER_STATUS = 'PAID'; // Status is PAID since payment is confirmed upon hitting confirmOrder
-
-// --- SSE Helper Function ---
+// SSE Helper
 const sendOrderStatusUpdate = (userId, order) => {
   const clientRes = clients.get(userId);
   if (clientRes) {
-    // Structure the event data
     const eventData = JSON.stringify({
       orderId: order.id,
       status: order.status,
       message: `Order #${order.id} is now ${order.status.toLowerCase()}.`
     });
     
-    // Write the SSE message: event:order_update\ndata:{...}\n\n
     clientRes.write(`event: order_update\n`);
     clientRes.write(`data: ${eventData}\n\n`);
     console.log(`SSE event sent to user ${userId} for order ${order.id}.`);
   }
 };
 
-
-
+// 1. POST /api/orders/checkout
 const initiateCheckout = async (req, res) => {
   const { totalAmount, items } = req.body; 
 
   if (!totalAmount || !items || items.length === 0) {
-    return res.status(400).json({ error: 'Checkout request must include total amount and at least one item.' });
+    return res.status(400).json({ error: 'Checkout requires total amount and items.' });
   }
   
-  // NOTE: On Day 21 (Payment Gateway), this is where we will integrate Razorpay
-  // and return the necessary Payment Intent ID (razorpay_order_id) to the frontend.
-
-  // Mock success response for now:
-  res.status(200).json({ 
-      message: 'Checkout initiated successfully. Proceed to payment.',
-      mockPaymentIntentId: 'mock_pi_' + Date.now(),
+  try {
+    // Mock payment for now
+    const mockPaymentIntentId = 'mock_pi_' + Date.now();
+    
+    res.status(200).json({ 
+      success: true,
+      message: 'Checkout initiated.',
+      mockPaymentIntentId: mockPaymentIntentId,
       totalAmount: parseFloat(totalAmount)
-  });
+    });
+  } catch (error) {
+    console.error('Checkout error:', error);
+    res.status(500).json({ error: 'Checkout failed.' });
+  }
 };
 
-
+// 2. POST /api/orders/confirm
 const confirmOrder = async (req, res) => {
   const customerId = req.user.userId; 
   const { totalAmount, items, paymentIntentId } = req.body; 
 
-  if (!totalAmount || !items || items.length === 0 || !paymentIntentId) {
-    return res.status(400).json({ error: 'Order confirmation requires total amount, items, and a payment intent ID.' });
-  }
+  console.log('Confirm order request:', { customerId, totalAmount, items, paymentIntentId });
 
-  // NOTE: On Day 21 (Payment Gateway), this is where we will verify the paymentIntentId.
+  if (!totalAmount || !items || items.length === 0 || !paymentIntentId) {
+    return res.status(400).json({ 
+      error: 'Order confirmation requires total amount, items, and payment intent ID.' 
+    });
+  }
   
   try {
-    // Transaction: Save the Order and its Items
+    // Create order with transaction
     const newOrder = await prisma.$transaction(async (prisma) => {
       
-     
+      // Create order
       const order = await prisma.order.create({
         data: {
-          customerId: customerId,
-          totalAmount: parseFloat(totalAmount),
-          status: INITIAL_ORDER_STATUS,
-          paymentIntentId: paymentIntentId, 
+          userId: customerId,
+          total: parseFloat(totalAmount),
+          status: 'PENDING',
+          paymentIntentId: paymentIntentId,
         },
       });
 
-    
+      console.log('Order created:', order);
+
+      // Create order items
       const orderItemsData = items.map(item => ({
         orderId: order.id,
         menuItemId: item.menuItemId,
         quantity: item.quantity,
-        price: parseFloat(item.price),
       }));
 
       await prisma.orderItem.createMany({
         data: orderItemsData,
       });
 
+      console.log('Order items created:', orderItemsData.length);
+
       return order;
     });
 
+    console.log('Order confirmed successfully:', newOrder);
+
     res.status(201).json({ 
+      success: true,
       message: 'Order confirmed and placed successfully.',
       order: newOrder
     });
 
   } catch (error) {
     console.error('Error confirming order:', error);
-    res.status(500).json({ error: 'Failed to confirm order.' });
+    res.status(500).json({ 
+      error: 'Failed to confirm order.',
+      details: error.message 
+    });
   }
 };
 
-
+// 3. GET /api/orders
 const getOrders = async (req, res) => {
   const { userId, role } = req.user;
   
@@ -107,13 +116,13 @@ const getOrders = async (req, res) => {
       orders = await prisma.order.findMany({
         orderBy: { createdAt: 'desc' },
         include: {
-          customer: { select: { id: true, email: true, name: true } },
+          user: { select: { id: true, email: true, name: true } },
           items: { include: { menuItem: true } }
         }
       });
     } else { 
       orders = await prisma.order.findMany({
-        where: { customerId: userId },
+        where: { userId: userId },
         orderBy: { createdAt: 'desc' },
         include: {
           items: { include: { menuItem: true } }
@@ -121,7 +130,7 @@ const getOrders = async (req, res) => {
       });
     }
 
-    res.status(200).json(orders);
+    res.status(200).json({ success: true, orders });
 
   } catch (error) {
     console.error('Error fetching orders:', error);
@@ -129,7 +138,7 @@ const getOrders = async (req, res) => {
   }
 };
 
-
+// 4. GET /api/orders/:id
 const getOrderById = async (req, res) => {
   const orderId = parseInt(req.params.id);
   const { userId, role } = req.user;
@@ -142,7 +151,7 @@ const getOrderById = async (req, res) => {
     const order = await prisma.order.findUnique({
       where: { id: orderId },
       include: {
-        customer: { select: { id: true, email: true, name: true } },
+        user: { select: { id: true, email: true, name: true } },
         items: { include: { menuItem: true } }
       }
     });
@@ -151,12 +160,12 @@ const getOrderById = async (req, res) => {
       return res.status(404).json({ error: 'Order not found.' });
     }
 
-    // Authorization Check: Customer can only view their own order
-    if (role === 'CUSTOMER' && order.customerId !== userId) {
-      return res.status(403).json({ error: 'Forbidden. You do not have access to this order.' });
+    // Authorization: Customer can only view their own orders
+    if (role === 'CUSTOMER' && order.userId !== userId) {
+      return res.status(403).json({ error: 'You do not have access to this order.' });
     }
 
-    res.status(200).json(order);
+    res.status(200).json({ success: true, order });
 
   } catch (error) {
     console.error('Error fetching order by ID:', error);
@@ -164,7 +173,7 @@ const getOrderById = async (req, res) => {
   }
 };
 
-// 5. PUT /api/orders/:id (Vendor updates order status)
+// 5. PUT /api/orders/:id
 const updateOrder = async (req, res) => {
   const orderId = parseInt(req.params.id);
   const { status } = req.body; 
@@ -174,53 +183,60 @@ const updateOrder = async (req, res) => {
   }
   
   try {
-    // 1. Update the order status in the database
     const updatedOrder = await prisma.order.update({
       where: { id: orderId },
       data: { status },
-      select: { id: true, status: true, customerId: true } 
+      select: { id: true, status: true, userId: true } 
     });
 
-    // 2. 📢 Push update via SSE
-    sendOrderStatusUpdate(updatedOrder.customerId, updatedOrder);
+    // Send SSE update
+    sendOrderStatusUpdate(updatedOrder.userId, updatedOrder);
     
     res.status(200).json({ 
+      success: true,
       message: `Order ${orderId} status updated to ${status}.`,
       order: updatedOrder
     });
 
   } catch (error) {
     if (error.code === 'P2025') {
-      return res.status(404).json({ error: 'Order not found for update.' });
+      return res.status(404).json({ error: 'Order not found.' });
     }
     console.error('Error updating order status:', error);
     res.status(500).json({ error: 'Failed to update order status.' });
   }
 };
 
-// 6. GET /api/orders/stream (SSE Connection Handler)
+// 6. GET /api/orders/stream (SSE)
 const connectToOrderStream = (req, res) => {
   const customerId = req.user.userId;
 
-  // Set SSE Headers
+  // Set SSE headers
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
   res.setHeader('Access-Control-Allow-Origin', process.env.FRONTEND_URL || 'http://localhost:3000'); 
   
-  // Send an initial ping event
+  // Send initial message
   res.write(`data: {"message": "Connected to Campus Bites order stream."}\n\n`);
 
-  // Store the client's response object
+  // Store connection
   clients.set(customerId, res);
+  console.log(`SSE connection established for user ${customerId}`);
 
-  // Handle client disconnection
+  // Heartbeat
+  const heartbeat = setInterval(() => {
+    res.write(`: heartbeat\n\n`);
+  }, 30000);
+
+  // Cleanup
   req.on('close', () => {
-    console.log(`SSE connection closed for user ${customerId}`);
+    clearInterval(heartbeat);
     clients.delete(customerId);
+    console.log(`SSE connection closed for user ${customerId}`);
+    res.end();
   });
 };
-
 
 module.exports = {
   initiateCheckout,
@@ -230,3 +246,4 @@ module.exports = {
   updateOrder,
   connectToOrderStream, 
 };
+
