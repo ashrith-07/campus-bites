@@ -36,30 +36,32 @@ const getMenuItemById = async (req, res) => {
 };
 
 
+
 const createMenuItem = async (req, res) => {
-  // NOTE: Validation for price/name is missing and will be added on Day 23 (Zod)
-  const { name, description, price, imageUrl, category } = req.body;
+  const { name, description, price, imageUrl, category, stock, popular } = req.body;
 
   if (!name || !price) {
-    return res.status(400).json({ error: 'Name and price are required for a menu item.' });
+    return res.status(400).json({ error: 'Name and price are required' });
   }
 
   try {
     const newItem = await prisma.menuItem.create({
-      data: { 
-        name, 
-        description: description || '', 
-        price: parseFloat(price),      
-        imageUrl: imageUrl || null,    // Image handling comes later (Day 16: Cloudinary)
-        category: category || 'Default', 
+      data: {
+        name,
+        description: description || '',
+        price: parseFloat(price),
+        category: category || 'Default',
+        imageUrl: imageUrl || null,
+        stock: stock || 0,
+        popular: popular || false,
+        isAvailable: true
       },
     });
 
-    res.status(201).json({ 
+    res.status(201).json({
       message: 'Menu item created successfully.',
-      item: newItem 
+      item: newItem
     });
-
   } catch (error) {
     console.error('Error creating menu item:', error);
     res.status(500).json({ error: 'Failed to create menu item.' });
@@ -70,7 +72,7 @@ const createMenuItem = async (req, res) => {
 const updateMenuItem = async (req, res) => {
   const itemId = parseInt(req.params.id);
   // NOTE: Day 23 (Zod) will validate the body contents
-  const { name, description, price, imageUrl, category } = req.body;
+  const { name, description, price, imageUrl, category, stock, popular, isAvailable } = req.body;
 
   if (isNaN(itemId)) {
     return res.status(400).json({ error: 'Invalid Menu Item ID.' });
@@ -81,10 +83,13 @@ const updateMenuItem = async (req, res) => {
       where: { id: itemId },
       data: {
         name,
-        description,
-        price: price ? parseFloat(price) : undefined, 
-        imageUrl,
-        category,
+        description: description || '',
+        price: price ? parseFloat(price) : undefined,
+        category: category || 'Default',
+        imageUrl: imageUrl || null,
+        stock: stock ?? undefined,
+        popular: popular ?? undefined,
+        isAvailable: isAvailable ?? undefined,
       },
     });
 
@@ -100,6 +105,7 @@ const updateMenuItem = async (req, res) => {
     res.status(500).json({ error: 'Failed to update menu item.' });
   }
 };
+
 
 
 const deleteMenuItem = async (req, res) => {

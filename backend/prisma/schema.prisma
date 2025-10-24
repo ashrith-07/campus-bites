@@ -12,37 +12,6 @@ enum UserRole {
   VENDOR
 }
 
-model User {
-  id            Int         @id @default(autoincrement())
-  email         String      @unique
-  passwordHash  String      
-  name          String?
-  role          UserRole    @default(CUSTOMER) 
-  orders        Order[]
-}
-
-model MenuItem {
-  id          Int      @id @default(autoincrement())
-  name        String   @unique
-  description String?  @db.Text
-  price       Decimal    @db.Decimal(6, 2)
-  isAvailable Boolean  @default(true)
-  orderItems OrderItem[]
-}
-
-model Order {
-  id        Int         @id @default(autoincrement())
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
-  status    OrderStatus @default(PENDING) 
-  total     Decimal       @db.Decimal(8, 2)
-  
-  userId    Int
-  user      User        @relation(fields: [userId], references: [id])
-  
-  items     OrderItem[]
-}
-
 enum OrderStatus {
   PENDING
   PROCESSING
@@ -51,15 +20,83 @@ enum OrderStatus {
   CANCELLED
 }
 
-model OrderItem {
+// ==========================================
+// USER MODEL
+// ==========================================
+model User {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  name         String?
+  role         UserRole @default(CUSTOMER)
+  createdAt    DateTime @default(now()) @map("created_at")
+  
+  // Relations
+  orders Order[]
+  
+  @@map("users")
+}
+
+// ==========================================
+// MENU ITEM MODEL
+// ==========================================
+model MenuItem {
   id          Int      @id @default(autoincrement())
-  quantity    Int
+  name        String   @unique
+  description String?  @db.Text
+  price       Decimal  @db.Decimal(6, 2)
+  category    String   @default("Default")
+  imageUrl    String?  @map("image_url")
+  stock       Int      @default(0)
+  isAvailable Boolean  @default(true) @map("is_available")
+  popular     Boolean  @default(false)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
   
-  orderId     Int
-  order       Order    @relation(fields: [orderId], references: [id])
+  // Relations
+  orderItems OrderItem[]
   
-  menuItemId  Int
-  menuItem    MenuItem @relation(fields: [menuItemId], references: [id])
+  @@index([category])
+  @@index([isAvailable])
+  @@map("menu_items")
+}
+
+// ==========================================
+// ORDER MODEL
+// ==========================================
+model Order {
+  id              Int         @id @default(autoincrement())
+  userId          Int         @map("user_id")
+  total           Decimal     @db.Decimal(8, 2)
+  status          OrderStatus @default(PENDING)
+  paymentIntentId String?     @map("payment_intent_id")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
   
-  @@unique([orderId, menuItemId]) 
+  // Relations
+  user  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items OrderItem[]
+  
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("orders")
+}
+
+// ==========================================
+// ORDER ITEM MODEL
+// ==========================================
+model OrderItem {
+  id         Int @id @default(autoincrement())
+  orderId    Int @map("order_id")
+  menuItemId Int @map("menu_item_id")
+  quantity   Int
+  
+  // Relations
+  order    Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItem MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  
+  @@unique([orderId, menuItemId])
+  @@index([orderId])
+  @@map("order_items")
 }
