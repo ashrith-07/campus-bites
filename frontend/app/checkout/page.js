@@ -55,41 +55,76 @@ export default function CheckoutPage() {
   const gst = subtotal * 0.05;
   const total = subtotal + gst;
 
-  const handlePlaceOrder = async () => {
+const handlePlaceOrder = async () => {
+  try {
     setLoading(true);
     setError('');
-
-    try {
-      // Step 1: Create checkout (get mock payment ID)
-      const checkoutData = await api.checkout(
-        total,
-        cart.map(item => ({
+    
+    console.log('Starting checkout...');
+    
+    // Step 1: Initiate checkout
+    const checkoutResponse = await fetch('http://localhost:3001/api/orders/checkout', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        totalAmount: total,
+        items: cart.map(item => ({
           menuItemId: item.id,
-          quantity: item.quantity,
-          price: parseFloat(item.price)
+          quantity: item.quantity
         }))
-      );
-
-      // Step 2: Confirm order (mock payment for now)
-      const orderData = await api.confirmOrder(
-        total,
-        cart.map(item => ({
-          menuItemId: item.id,
-          quantity: item.quantity,
-          price: parseFloat(item.price)
-        })),
-        checkoutData.mockPaymentIntentId // Mock payment ID
-      );
-
-      // Step 3: Clear cart and redirect to success page
-      clearCart();
-      router.push(`/order-success?orderId=${orderData.order.id}`);
-
-    } catch (err) {
-      setError(err.message || 'Failed to place order');
-      setLoading(false);
+      })
+    });
+    
+    if (!checkoutResponse.ok) {
+      const errorData = await checkoutResponse.json();
+      throw new Error(errorData.error || 'Checkout failed');
     }
-  };
+    
+    const checkoutData = await checkoutResponse.json();
+    console.log('Checkout response:', checkoutData);
+    
+    // Step 2: Confirm order
+    const confirmResponse = await fetch('http://localhost:3001/api/orders/confirm', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        totalAmount: total,
+        items: cart.map(item => ({
+          menuItemId: item.id,
+          quantity: item.quantity
+        })),
+        paymentIntentId: checkoutData.mockPaymentIntentId
+      })
+    });
+    
+    if (!confirmResponse.ok) {
+      const errorData = await confirmResponse.json();
+      throw new Error(errorData.error || 'Failed to confirm order');
+    }
+    
+    const confirmData = await confirmResponse.json();
+    console.log('Confirm response:', confirmData);
+    
+    const orderId = confirmData.order.id;
+    console.log('Order ID:', orderId);
+    
+    // DON'T clear cart here - order-success page will do it
+    // Use replace instead of push to prevent back button issues
+    router.replace(`/order-success?orderId=${orderId}`);
+    
+  } catch (error) {
+    console.error('Order placement error:', error);
+    setError(error.message || 'Failed to place order. Please try again.');
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen bg-background">

@@ -1,14 +1,19 @@
 'use client';
+
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { CheckCircle, ArrowRight, Clock, MapPin } from 'lucide-react';
 import Link from 'next/link';
+import { useCart } from '@/contexts/CartContext';
 
 export default function OrderSuccessPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const orderId = searchParams.get('orderId');
-  const [countdown, setCountdown] = useState(5);
+  const { clearCart } = useCart();
+  
+  const [order, setOrder] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     if (!orderId) {
@@ -16,96 +21,139 @@ export default function OrderSuccessPage() {
       return;
     }
 
-    // Countdown timer
-    const timer = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          return 0;
+    // Clear cart on successful order
+    clearCart();
+    
+    fetchOrderDetails();
+  }, [orderId]);
+
+  const fetchOrderDetails = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:3001/api/orders/${orderId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
         }
-        return prev - 1;
       });
-    }, 1000);
 
-    return () => clearInterval(timer);
-  }, [orderId, router]);
+      if (!response.ok) throw new Error('Failed to fetch order details');
 
-  if (!orderId) {
-    return null;
+      const data = await response.json();
+      setOrder(data.order);
+    } catch (err) {
+      setError('Failed to load order details');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading order details...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !order) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-500 mb-4">{error || 'Order not found'}</p>
+          <Link href="/" className="text-orange-500 hover:underline">
+            Go to Home
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-4 py-12">
-      <div className="max-w-md w-full">
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-2xl mx-auto px-4">
         {/* Success Icon */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-24 h-24 bg-success/10 rounded-full mb-6">
-            <CheckCircle className="w-16 h-16 text-success" />
+        <div className="bg-white rounded-lg shadow-md p-8 text-center mb-6">
+          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-10 h-10 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
           </div>
-          <h1 className="font-serif text-4xl font-bold text-foreground mb-3">
-            Order Placed!
-          </h1>
-          <p className="text-lg text-muted-foreground">
-            Your order has been confirmed successfully
-          </p>
+          <h1 className="text-2xl font-bold text-gray-800 mb-2">Order Placed Successfully!</h1>
+          <p className="text-gray-600 mb-4">Thank you for your order</p>
+          <div className="inline-block bg-orange-50 px-4 py-2 rounded-lg">
+            <p className="text-sm text-gray-600">Order ID</p>
+            <p className="text-xl font-bold text-orange-500">#{order.id}</p>
+          </div>
         </div>
 
-        {/* Order Details Card */}
-        <div className="bg-card rounded-2xl p-6 shadow-elegant border border-border mb-6">
-          <div className="text-center mb-6">
-            <p className="text-sm text-muted-foreground mb-2">Order Number</p>
-            <p className="text-3xl font-bold text-secondary">#{orderId}</p>
+        {/* Order Details */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          <h2 className="text-lg font-semibold mb-4">Order Details</h2>
+          
+          <div className="space-y-3 mb-4">
+            <div className="flex justify-between">
+              <span className="text-gray-600">Status:</span>
+              <span className="font-medium text-orange-500 capitalize">{order.status}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Order Time:</span>
+              <span className="font-medium">{new Date(order.createdAt).toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Payment:</span>
+              <span className="font-medium">{order.paymentIntentId}</span>
+            </div>
           </div>
 
-          <div className="space-y-4 pt-6 border-t border-border">
-            {/* Preparation Time */}
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 bg-secondary/10 rounded-full flex items-center justify-center flex-shrink-0">
-                <Clock className="w-5 h-5 text-secondary" />
-              </div>
-              <div>
-                <p className="font-semibold text-foreground">Ready in 15-20 minutes</p>
-                <p className="text-sm text-muted-foreground">We'll notify you when it's ready</p>
-              </div>
+          <div className="border-t pt-4">
+            <h3 className="font-semibold mb-3">Items Ordered</h3>
+            <div className="space-y-3">
+              {order.items && order.items.map((item) => (
+                <div key={item.id} className="flex justify-between items-center">
+                  <div className="flex items-center gap-3">
+                    <img 
+                      src={item.menuItem.imageUrl} 
+                      alt={item.menuItem.name}
+                      className="w-12 h-12 rounded object-cover"
+                    />
+                    <div>
+                      <p className="font-medium">{item.menuItem.name}</p>
+                      <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
+                    </div>
+                  </div>
+                  <p className="font-medium">₹{(parseFloat(item.menuItem.price) * item.quantity).toFixed(2)}</p>
+                </div>
+              ))}
             </div>
+          </div>
 
-            {/* Pickup Location */}
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 bg-secondary/10 rounded-full flex items-center justify-center flex-shrink-0">
-                <MapPin className="w-5 h-5 text-secondary" />
-              </div>
-              <div>
-                <p className="font-semibold text-foreground">Pickup Location</p>
-                <p className="text-sm text-muted-foreground">Campus Canteen - Counter #3</p>
-              </div>
+          <div className="border-t mt-4 pt-4">
+            <div className="flex justify-between text-lg font-bold">
+              <span>Total Amount:</span>
+              <span className="text-orange-500">₹{parseFloat(order.total).toFixed(2)}</span>
             </div>
           </div>
         </div>
 
         {/* Action Buttons */}
-        <div className="space-y-3">
-          <Link
-            href={`/order-tracking?orderId=${orderId}`}
-            className="w-full bg-secondary text-secondary-foreground py-4 rounded-xl font-bold text-lg hover:opacity-90 transition-all shadow-lg flex items-center justify-center gap-2"
+        <div className="flex gap-4">
+          <Link 
+            href={`/order-tracking?orderId=${order.id}`}
+            className="flex-1 bg-orange-500 text-white py-3 rounded-lg font-semibold text-center hover:bg-orange-600 transition"
           >
             Track Order
-            <ArrowRight className="w-5 h-5" />
           </Link>
-
-          <Link
+          <Link 
             href="/"
-            className="w-full bg-muted text-foreground py-4 rounded-xl font-semibold text-lg hover:bg-border transition-all flex items-center justify-center"
+            className="flex-1 bg-white text-orange-500 py-3 rounded-lg font-semibold text-center border-2 border-orange-500 hover:bg-orange-50 transition"
           >
             Back to Home
           </Link>
         </div>
-
-        {/* Auto Redirect Message */}
-        {countdown > 0 && (
-          <p className="text-center text-sm text-muted-foreground mt-6">
-            Redirecting to order tracking in {countdown} seconds...
-          </p>
-        )}
       </div>
     </div>
   );
