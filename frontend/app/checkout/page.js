@@ -10,7 +10,7 @@ export default function CheckoutPage() {
   const router = useRouter();
   const { cart, getCartTotal, clearCart } = useCart();
   const { user, token, loading: authLoading } = useAuth();
-  const [paymentMethod, setPaymentMethod] = useState('razorpay');
+  const [paymentMethod] = useState('razorpay');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [initializing, setInitializing] = useState(true);
@@ -258,34 +258,7 @@ const handlePlaceOrder = async () => {
                   </span>
                 </label>
 
-                {/* Cash on Pickup Option */}
-                <label
-                  className={`flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                    paymentMethod === 'cash'
-                      ? 'border-secondary bg-secondary/5'
-                      : 'border-border hover:border-muted-foreground'
-                  }`}
-                >
-                  <div className="flex items-center gap-4">
-                    <input
-                      type="radio"
-                      name="payment"
-                      value="cash"
-                      checked={paymentMethod === 'cash'}
-                      onChange={(e) => setPaymentMethod(e.target.value)}
-                      className="w-5 h-5 text-secondary accent-secondary"
-                    />
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center">
-                        <Banknote className="w-5 h-5 text-foreground" />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-foreground">Cash on Pickup</p>
-                        <p className="text-xs text-muted-foreground">Pay when you collect</p>
-                      </div>
-                    </div>
-                  </div>
-                </label>
+               
               </div>
 
               {/* Error Message */}
