@@ -21,9 +21,7 @@ export default function OrderSuccessPage() {
       return;
     }
 
-    // Clear cart on successful order
     clearCart();
-    
     fetchOrderDetails();
   }, [orderId]);
 
@@ -50,10 +48,10 @@ export default function OrderSuccessPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading order details...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-secondary border-t-transparent mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading order details...</p>
         </div>
       </div>
     );
@@ -61,10 +59,10 @@ export default function OrderSuccessPage() {
 
   if (error || !order) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <p className="text-red-500 mb-4">{error || 'Order not found'}</p>
-          <Link href="/" className="text-orange-500 hover:underline">
+          <p className="text-destructive mb-4">{error || 'Order not found'}</p>
+          <Link href="/" className="text-secondary hover:underline">
             Go to Home
           </Link>
         </div>
@@ -73,43 +71,43 @@ export default function OrderSuccessPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-background py-8">
       <div className="max-w-2xl mx-auto px-4">
         {/* Success Icon */}
-        <div className="bg-white rounded-lg shadow-md p-8 text-center mb-6">
-          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-10 h-10 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="bg-card rounded-2xl p-8 text-center mb-6 shadow-elegant border border-border">
+          <div className="w-20 h-20 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-10 h-10 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">Order Placed Successfully!</h1>
-          <p className="text-gray-600 mb-4">Thank you for your order</p>
-          <div className="inline-block bg-orange-50 px-4 py-2 rounded-lg">
-            <p className="text-sm text-gray-600">Order ID</p>
-            <p className="text-xl font-bold text-orange-500">#{order.id}</p>
+          <h1 className="font-serif text-2xl font-bold text-foreground mb-2">Order Placed Successfully!</h1>
+          <p className="text-muted-foreground mb-4">Thank you for your order</p>
+          <div className="inline-block bg-secondary/10 px-4 py-2 rounded-lg">
+            <p className="text-sm text-muted-foreground">Order ID</p>
+            <p className="text-xl font-bold text-secondary">#{order.id}</p>
           </div>
         </div>
 
         {/* Order Details */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h2 className="text-lg font-semibold mb-4">Order Details</h2>
+        <div className="bg-card rounded-2xl p-6 shadow-elegant mb-6 border border-border">
+          <h2 className="font-serif text-lg font-semibold mb-4">Order Details</h2>
           
           <div className="space-y-3 mb-4">
             <div className="flex justify-between">
-              <span className="text-gray-600">Status:</span>
-              <span className="font-medium text-orange-500 capitalize">{order.status}</span>
+              <span className="text-muted-foreground">Status:</span>
+              <span className="font-medium text-secondary capitalize">{order.status}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600">Order Time:</span>
-              <span className="font-medium">{new Date(order.createdAt).toLocaleString()}</span>
+              <span className="text-muted-foreground">Order Time:</span>
+              <span className="font-medium text-foreground">{new Date(order.createdAt).toLocaleString()}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600">Payment:</span>
-              <span className="font-medium">{order.paymentIntentId}</span>
+              <span className="text-muted-foreground">Payment:</span>
+              <span className="font-medium text-foreground">{order.paymentIntentId}</span>
             </div>
           </div>
 
-          <div className="border-t pt-4">
+          <div className="border-t border-border pt-4">
             <h3 className="font-semibold mb-3">Items Ordered</h3>
             <div className="space-y-3">
               {order.items && order.items.map((item) => (
@@ -121,20 +119,20 @@ export default function OrderSuccessPage() {
                       className="w-12 h-12 rounded object-cover"
                     />
                     <div>
-                      <p className="font-medium">{item.menuItem.name}</p>
-                      <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
+                      <p className="font-medium text-foreground">{item.menuItem.name}</p>
+                      <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
                     </div>
                   </div>
-                  <p className="font-medium">₹{(parseFloat(item.menuItem.price) * item.quantity).toFixed(2)}</p>
+                  <p className="font-medium text-foreground">₹{(parseFloat(item.menuItem.price) * item.quantity).toFixed(2)}</p>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="border-t mt-4 pt-4">
+          <div className="border-t border-border mt-4 pt-4">
             <div className="flex justify-between text-lg font-bold">
-              <span>Total Amount:</span>
-              <span className="text-orange-500">₹{parseFloat(order.total).toFixed(2)}</span>
+              <span className="text-foreground">Total Amount:</span>
+              <span className="text-secondary">₹{parseFloat(order.total).toFixed(2)}</span>
             </div>
           </div>
         </div>
@@ -143,13 +141,13 @@ export default function OrderSuccessPage() {
         <div className="flex gap-4">
           <Link 
             href={`/order-tracking?orderId=${order.id}`}
-            className="flex-1 bg-orange-500 text-white py-3 rounded-lg font-semibold text-center hover:bg-orange-600 transition"
+            className="flex-1 bg-secondary text-secondary-foreground py-3 rounded-xl font-semibold text-center hover:opacity-90 transition"
           >
             Track Order
           </Link>
           <Link 
             href="/"
-            className="flex-1 bg-white text-orange-500 py-3 rounded-lg font-semibold text-center border-2 border-orange-500 hover:bg-orange-50 transition"
+            className="flex-1 bg-card text-secondary py-3 rounded-xl font-semibold text-center border-2 border-secondary hover:bg-secondary/5 transition"
           >
             Back to Home
           </Link>

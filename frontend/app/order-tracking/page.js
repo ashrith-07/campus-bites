@@ -1,262 +1,236 @@
 'use client';
+
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { CheckCircle, ArrowRight, Clock, MapPin } from 'lucide-react';
+import { ArrowLeft, Package, Clock, CheckCircle, XCircle } from 'lucide-react';
 import Link from 'next/link';
 
-export default function OrderSuccessPage() {
+export default function OrderTrackingPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const orderId = searchParams.get('orderId');
-  const [countdown, setCountdown] = useState(5);
+  
+  const [order, setOrder] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     if (!orderId) {
       router.push('/');
       return;
     }
+    fetchOrderDetails();
+  }, [orderId]);
 
-    // Countdown timer
-    const timer = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          return 0;
+  const fetchOrderDetails = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:3001/api/orders/${orderId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
         }
-        return prev - 1;
       });
-    }, 1000);
 
-    return () => clearInterval(timer);
-  }, [orderId, router]);
+      if (!response.ok) throw new Error('Failed to fetch order details');
 
-  if (!orderId) {
-    return null;
+      const data = await response.json();
+      setOrder(data.order);
+    } catch (err) {
+      setError('Failed to load order details');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getStatusStep = (status) => {
+    const steps = {
+      'PENDING': 1,
+      'PROCESSING': 2,
+      'READY': 3,
+      'COMPLETED': 4,
+      'CANCELLED': 0
+    };
+    return steps[status] || 0;
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-secondary border-t-transparent mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading order details...</p>
+        </div>
+      </div>
+    );
   }
 
+  if (error || !order) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-destructive mb-4">{error || 'Order not found'}</p>
+          <Link href="/" className="text-secondary hover:underline">
+            Go to Home
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const currentStep = getStatusStep(order.status);
+  const isCancelled = order.status === 'CANCELLED';
+
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-4 py-12">
-      <div className="max-w-md w-full">
-        {/* Success Icon */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-24 h-24 bg-success/10 rounded-full mb-6">
-            <CheckCircle className="w-16 h-16 text-success" />
-          </div>
-          <h1 className="font-serif text-4xl font-bold text-foreground mb-3">
-            Order Placed!
-          </h1>
-          <p className="text-lg text-muted-foreground">
-            Your order has been confirmed successfully
-          </p>
-        </div>
-
-        {/* Order Details Card */}
-        <div className="bg-card rounded-2xl p-6 shadow-elegant border border-border mb-6">
-          <div className="text-center mb-6">
-            <p className="text-sm text-muted-foreground mb-2">Order Number</p>
-            <p className="text-3xl font-bold text-secondary">#{orderId}</p>
-          </div>
-
-          <div className="space-y-4 pt-6 border-t border-border">
-            {/* Preparation Time */}
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 bg-secondary/10 rounded-full flex items-center justify-center flex-shrink-0">
-                <Clock className="w-5 h-5 text-secondary" />
-              </div>
-              <div>
-                <p className="font-semibold text-foreground">Ready in 15-20 minutes</p>
-                <p className="text-sm text-muted-foreground">We'll notify you when it's ready</p>
-              </div>
-            </div>
-
-            {/* Pickup Location */}
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 bg-secondary/10 rounded-full flex items-center justify-center flex-shrink-0">
-                <MapPin className="w-5 h-5 text-secondary" />
-              </div>
-              <div>
-                <p className="font-semibold text-foreground">Pickup Location</p>
-                <p className="text-sm text-muted-foreground">Campus Canteen - Counter #3</p>
-              </div>
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="bg-card border-b border-border sticky top-0 z-10 shadow-sm">
+        <div className="max-w-4xl mx-auto px-6 py-4">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => router.back()}
+              className="p-2 hover:bg-muted rounded-full transition-colors"
+            >
+              <ArrowLeft className="w-6 h-6" />
+            </button>
+            <div>
+              <h1 className="font-serif text-2xl font-bold text-foreground">Track Order</h1>
+              <p className="text-sm text-muted-foreground">Order #{order.id}</p>
             </div>
           </div>
         </div>
+      </header>
+
+      <div className="max-w-4xl mx-auto px-6 py-8">
+        {/* Status Card */}
+        <div className="bg-card rounded-2xl p-6 shadow-elegant mb-6 border border-border">
+          <div className="text-center mb-8">
+            <p className="text-muted-foreground mb-2">Current Status</p>
+            <p className="font-serif text-3xl font-bold text-secondary">
+              {order.status}
+            </p>
+          </div>
+
+          {/* Progress Bar */}
+          {!isCancelled && (
+            <div className="relative">
+              <div className="flex justify-between mb-2">
+                <span className="text-xs text-muted-foreground">Pending</span>
+                <span className="text-xs text-muted-foreground">Processing</span>
+                <span className="text-xs text-muted-foreground">Ready</span>
+                <span className="text-xs text-muted-foreground">Completed</span>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                {[1, 2, 3, 4].map((step) => (
+                  <div key={step} className="flex items-center flex-1">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                      step <= currentStep 
+                        ? 'bg-secondary text-secondary-foreground' 
+                        : 'bg-muted text-muted-foreground'
+                    }`}>
+                      {step <= currentStep ? (
+                        <CheckCircle className="w-6 h-6" />
+                      ) : (
+                        <Clock className="w-6 h-6" />
+                      )}
+                    </div>
+                    {step < 4 && (
+                      <div className={`flex-1 h-1 mx-2 ${
+                        step < currentStep ? 'bg-secondary' : 'bg-muted'
+                      }`}></div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {isCancelled && (
+            <div className="text-center py-8">
+              <XCircle className="w-16 h-16 text-destructive mx-auto mb-4" />
+              <p className="text-xl font-semibold text-destructive">Order Cancelled</p>
+            </div>
+          )}
+        </div>
+
+        {/* Order Details */}
+        <div className="bg-card rounded-2xl p-6 shadow-elegant mb-6 border border-border">
+          <h2 className="font-serif text-xl font-bold mb-4">Order Details</h2>
+          
+          <div className="space-y-3 mb-4">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Order ID:</span>
+              <span className="font-semibold text-foreground">#{order.id}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Order Time:</span>
+              <span className="font-semibold text-foreground">{new Date(order.createdAt).toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Payment:</span>
+              <span className="font-semibold text-foreground">{order.paymentIntentId}</span>
+            </div>
+          </div>
+
+          <div className="border-t border-border pt-4">
+            <h3 className="font-semibold mb-3 flex items-center gap-2">
+              <Package className="w-5 h-5" />
+              Items
+            </h3>
+            <div className="space-y-3">
+              {order.items && order.items.map((item) => (
+                <div key={item.id} className="flex justify-between items-center">
+                  <div className="flex items-center gap-3">
+                    <img 
+                      src={item.menuItem.imageUrl} 
+                      alt={item.menuItem.name}
+                      className="w-12 h-12 rounded object-cover"
+                    />
+                    <div>
+                      <p className="font-medium text-foreground">{item.menuItem.name}</p>
+                      <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
+                    </div>
+                  </div>
+                  <p className="font-semibold text-foreground">₹{(parseFloat(item.menuItem.price) * item.quantity).toFixed(2)}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="border-t border-border mt-4 pt-4">
+            <div className="flex justify-between text-xl font-bold">
+              <span className="text-foreground">Total Amount:</span>
+              <span className="text-secondary">₹{parseFloat(order.total).toFixed(2)}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Pickup Information */}
+        {order.status === 'READY' && (
+          <div className="bg-success/10 border-2 border-success rounded-2xl p-6 text-center mb-6">
+            <CheckCircle className="w-16 h-16 text-success mx-auto mb-4" />
+            <h3 className="text-2xl font-bold text-success mb-2">Your order is ready!</h3>
+            <p className="text-success-foreground">Please collect from Campus Canteen - Counter #3</p>
+          </div>
+        )}
 
         {/* Action Buttons */}
-        <div className="space-y-3">
-          <Link
-            href={`/order-tracking?orderId=${orderId}`}
-            className="w-full bg-secondary text-secondary-foreground py-4 rounded-xl font-bold text-lg hover:opacity-90 transition-all shadow-lg flex items-center justify-center gap-2"
-          >
-            Track Order
-            <ArrowRight className="w-5 h-5" />
-          </Link>
-
-          <Link
+        <div className="flex gap-4">
+          <Link 
             href="/"
-            className="w-full bg-muted text-foreground py-4 rounded-xl font-semibold text-lg hover:bg-border transition-all flex items-center justify-center"
+            className="flex-1 bg-secondary text-secondary-foreground py-3 rounded-xl font-semibold text-center hover:opacity-90 transition"
           >
             Back to Home
           </Link>
+          <button
+            onClick={fetchOrderDetails}
+            className="flex-1 bg-card text-secondary py-3 rounded-xl font-semibold border-2 border-secondary hover:bg-secondary/5 transition"
+          >
+            Refresh Status
+          </button>
         </div>
-
-        {/* Auto Redirect Message */}
-        {countdown > 0 && (
-          <p className="text-center text-sm text-muted-foreground mt-6">
-            Redirecting to order tracking in {countdown} seconds...
-          </p>
-        )}
       </div>
     </div>
   );
 }
-
-// 'use client';
-// import { useEffect, useState } from 'react';
-// import { useRouter, useSearchParams } from 'next/navigation';
-// import { ArrowLeft, Clock, CheckCircle, Package, Truck } from 'lucide-react';
-// import { api } from '@/lib/api';
-
-// export default function OrderTrackingPage() {
-//   const router = useRouter();
-//   const searchParams = useSearchParams();
-//   const orderId = searchParams.get('orderId');
-//   const [order, setOrder] = useState(null);
-//   const [loading, setLoading] = useState(true);
-//   const [error, setError] = useState('');
-
-//   useEffect(() => {
-//     if (!orderId) {
-//       router.push('/');
-//       return;
-//     }
-
-//     fetchOrder();
-//   }, [orderId]);
-
-//   const fetchOrder = async () => {
-//     try {
-//       setLoading(true);
-//       const response = await api.getOrder(orderId);
-//       setOrder(response.order || response);
-//     } catch (err) {
-//       setError('Failed to load order details');
-//       console.error(err);
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   if (loading) {
-//     return (
-//       <div className="min-h-screen bg-background flex items-center justify-center">
-//         <div className="text-center">
-//           <div className="animate-spin rounded-full h-12 w-12 border-4 border-secondary border-t-transparent mx-auto mb-4"></div>
-//           <p className="text-muted-foreground">Loading order details...</p>
-//         </div>
-//       </div>
-//     );
-//   }
-
-//   if (error || !order) {
-//     return (
-//       <div className="min-h-screen bg-background flex items-center justify-center px-4">
-//         <div className="text-center">
-//           <p className="text-destructive mb-4">{error || 'Order not found'}</p>
-//           <button
-//             onClick={() => router.push('/')}
-//             className="px-6 py-2 bg-secondary text-secondary-foreground rounded-xl font-semibold hover:opacity-90"
-//           >
-//             Back to Home
-//           </button>
-//         </div>
-//       </div>
-//     );
-//   }
-
-//   const statusSteps = [
-//     { key: 'PENDING', label: 'Order Placed', icon: CheckCircle },
-//     { key: 'PROCESSING', label: 'Preparing', icon: Package },
-//     { key: 'READY', label: 'Ready for Pickup', icon: Truck },
-//     { key: 'COMPLETED', label: 'Completed', icon: CheckCircle },
-//   ];
-
-//   const currentStepIndex = statusSteps.findIndex(step => step.key === order.status);
-
-//   return (
-//     <div className="min-h-screen bg-background">
-//       {/* Header */}
-//       <header className="bg-card border-b sticky top-0 z-40 shadow-sm">
-//         <div className="max-w-3xl mx-auto px-6 py-4">
-//           <div className="flex items-center gap-4">
-//             <button
-//               onClick={() => router.push('/')}
-//               className="p-2 hover:bg-muted rounded-full transition-colors"
-//             >
-//               <ArrowLeft className="w-6 h-6" />
-//             </button>
-//             <div>
-//               <h1 className="font-serif text-2xl font-bold text-foreground">Order Tracking</h1>
-//               <p className="text-sm text-muted-foreground">Order #{orderId}</p>
-//             </div>
-//           </div>
-//         </div>
-//       </header>
-
-//       <div className="max-w-3xl mx-auto px-6 py-8">
-//         {/* Order Status */}
-//         <div className="bg-card rounded-2xl p-6 shadow-elegant border border-border mb-6">
-//           <h2 className="font-serif text-xl font-bold text-foreground mb-6">Order Status</h2>
-          
-//           <div className="space-y-4">
-//             {statusSteps.map((step, index) => {
-//               const Icon = step.icon;
-//               const isCompleted = index <= currentStepIndex;
-//               const isCurrent = index === currentStepIndex;
-              
-//               return (
-//                 <div key={step.key} className="flex items-center gap-4">
-//                   <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-//                     isCompleted ? 'bg-success text-white' : 'bg-muted text-muted-foreground'
-//                   }`}>
-//                     <Icon className="w-5 h-5" />
-//                   </div>
-//                   <div className="flex-1">
-//                     <p className={`font-semibold ${isCurrent ? 'text-secondary' : 'text-foreground'}`}>
-//                       {step.label}
-//                     </p>
-//                     {isCurrent && (
-//                       <p className="text-sm text-muted-foreground">In progress...</p>
-//                     )}
-//                   </div>
-//                 </div>
-//               );
-//             })}
-//           </div>
-//         </div>
-
-//         {/* Order Items */}
-//         <div className="bg-card rounded-2xl p-6 shadow-elegant border border-border">
-//           <h2 className="font-serif text-xl font-bold text-foreground mb-4">Order Items</h2>
-//           <div className="space-y-3">
-//             {order.items?.map((item) => (
-//               <div key={item.id} className="flex justify-between items-center py-2 border-b border-border last:border-0">
-//                 <div>
-//                   <p className="font-semibold text-foreground">{item.menuItem.name}</p>
-//                   <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
-//                 </div>
-//                 <p className="font-semibold text-foreground">
-//                   ₹{(parseFloat(item.menuItem.price) * item.quantity).toFixed(2)}
-//                 </p>
-//               </div>
-//             ))}
-//             <div className="pt-3 border-t-2 border-border flex justify-between items-center">
-//               <p className="font-bold text-lg">Total</p>
-//               <p className="font-bold text-2xl text-secondary">₹{parseFloat(order.total).toFixed(2)}</p>
-//             </div>
-//           </div>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// }

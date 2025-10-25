@@ -1,22 +1,27 @@
 import { AuthProvider } from '@/contexts/AuthContext';
 import { CartProvider } from '@/contexts/CartContext';
-import './globals.css'
+import { SSEProvider } from '@/contexts/SSEContext';
+import NotificationToast from '@/components/ui/NotificationToast';
+import './globals.css';
 
 export const metadata = {
-  title: 'Campus Bites - Elevated Campus Dining',
-  description: 'Order from anywhere on campus, pick up fresh when ready',
-}
+  title: 'Campus Bites',
+  description: 'Elevated Campus Dining',
+};
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className="font-sans antialiased">
+      <body>
         <AuthProvider>
           <CartProvider>
-            {children}
+            <SSEProvider>
+              {children}
+              <NotificationToast />
+            </SSEProvider>
           </CartProvider>
         </AuthProvider>
       </body>
     </html>
-  )
+  );
 }
