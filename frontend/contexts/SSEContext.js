@@ -11,6 +11,7 @@ export function SSEProvider({ children }) {
   const [unreadCount, setUnreadCount] = useState(0);
   const [orderUpdates, setOrderUpdates] = useState({});
   const eventSourceRef = useRef(null);
+  const reconnectTimeoutRef = useRef(null);
 
   useEffect(() => {
     if (!token || !user) {
@@ -18,6 +19,10 @@ export function SSEProvider({ children }) {
       if (eventSourceRef.current) {
         eventSourceRef.current.close();
         eventSourceRef.current = null;
+      }
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
       }
       return;
     }
@@ -30,6 +35,10 @@ export function SSEProvider({ children }) {
         eventSourceRef.current.close();
         eventSourceRef.current = null;
       }
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
+      }
     };
   }, [token, user]);
 
@@ -38,25 +47,29 @@ export function SSEProvider({ children }) {
       return; // Already connected
     }
 
+    if (!token) {
+      console.log('No token available for SSE connection');
+      return;
+    }
+
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
-    const url = `${apiUrl}/orders/stream`;
+    // Pass token as query parameter since EventSource doesn't support headers
+    const url = `${apiUrl}/orders/stream?token=${token}`;
 
-    console.log('Connecting to SSE:', url);
+    console.log('Connecting to SSE...');
 
-    const eventSource = new EventSource(url, {
-      withCredentials: false,
-    });
+    const eventSource = new EventSource(url);
 
     // Connection opened
     eventSource.onopen = () => {
-      console.log('SSE connection established');
+      console.log('✅ SSE connection established');
     };
 
     // Listen for order updates
     eventSource.addEventListener('order_update', (event) => {
       try {
         const data = JSON.parse(event.data);
-        console.log('Order update received:', data);
+        console.log('📦 Order update received:', data);
         
         // Add notification
         const notification = {
@@ -91,21 +104,22 @@ export function SSEProvider({ children }) {
     eventSource.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        console.log('SSE message:', data);
+        console.log('SSE message:', data.message || data);
       } catch (error) {
-        console.log('SSE heartbeat or info message');
+        console.log('SSE heartbeat');
       }
     };
 
     // Handle errors
     eventSource.onerror = (error) => {
-      console.error('SSE error:', error);
+      console.error('❌ SSE connection error');
       eventSource.close();
       eventSourceRef.current = null;
       
       // Retry connection after 5 seconds
-      setTimeout(() => {
+      reconnectTimeoutRef.current = setTimeout(() => {
         if (token && user) {
+          console.log('Retrying SSE connection...');
           connectToSSE();
         }
       }, 5000);

@@ -208,6 +208,7 @@ const updateOrder = async (req, res) => {
 };
 
 // 6. GET /api/orders/stream (SSE)
+// 6. GET /api/orders/stream (SSE)
 const connectToOrderStream = (req, res) => {
   const customerId = req.user.userId;
 
@@ -215,16 +216,17 @@ const connectToOrderStream = (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
-  res.setHeader('Access-Control-Allow-Origin', process.env.FRONTEND_URL || 'http://localhost:3000'); 
+  res.setHeader('Access-Control-Allow-Origin', process.env.FRONTEND_URL || 'http://localhost:3000');
+  res.setHeader('X-Accel-Buffering', 'no'); // Disable buffering for nginx
   
   // Send initial message
-  res.write(`data: {"message": "Connected to Campus Bites order stream."}\n\n`);
+  res.write(`data: ${JSON.stringify({ message: "Connected to Campus Bites order stream." })}\n\n`);
 
   // Store connection
   clients.set(customerId, res);
   console.log(`SSE connection established for user ${customerId}`);
 
-  // Heartbeat
+  // Heartbeat every 30 seconds
   const heartbeat = setInterval(() => {
     res.write(`: heartbeat\n\n`);
   }, 30000);
@@ -244,6 +246,6 @@ module.exports = {
   getOrders,
   getOrderById,
   updateOrder,
-  connectToOrderStream, 
+  connectToOrderStream,
 };
 
