@@ -4,11 +4,13 @@ import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Package, Clock, CheckCircle, XCircle } from 'lucide-react';
 import Link from 'next/link';
+import { useSSE } from '@/contexts/SSEContext';
 
 export default function OrderTrackingPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const orderId = searchParams.get('orderId');
+  const { getOrderUpdate } = useSSE();
   
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -21,6 +23,20 @@ export default function OrderTrackingPage() {
     }
     fetchOrderDetails();
   }, [orderId]);
+
+  // Listen for real-time updates
+  useEffect(() => {
+    if (!orderId || !order) return;
+
+    const update = getOrderUpdate(parseInt(orderId));
+    if (update && update.status !== order.status) {
+      // Update order status in real-time
+      setOrder(prev => ({
+        ...prev,
+        status: update.status
+      }));
+    }
+  }, [getOrderUpdate(parseInt(orderId))]);
 
   const fetchOrderDetails = async () => {
     try {
@@ -102,6 +118,12 @@ export default function OrderTrackingPage() {
       </header>
 
       <div className="max-w-4xl mx-auto px-6 py-8">
+        {/* Real-time Status Indicator */}
+        <div className="bg-secondary/10 border border-secondary/20 rounded-xl p-4 mb-6 flex items-center gap-3">
+          <div className="w-2 h-2 bg-secondary rounded-full animate-pulse"></div>
+          <p className="text-sm text-foreground">Live tracking enabled - status updates automatically</p>
+        </div>
+
         {/* Status Card */}
         <div className="bg-card rounded-2xl p-6 shadow-elegant mb-6 border border-border">
           <div className="text-center mb-8">
@@ -124,9 +146,9 @@ export default function OrderTrackingPage() {
               <div className="flex items-center justify-between">
                 {[1, 2, 3, 4].map((step) => (
                   <div key={step} className="flex items-center flex-1">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-500 ${
                       step <= currentStep 
-                        ? 'bg-secondary text-secondary-foreground' 
+                        ? 'bg-secondary text-secondary-foreground scale-110' 
                         : 'bg-muted text-muted-foreground'
                     }`}>
                       {step <= currentStep ? (
@@ -136,7 +158,7 @@ export default function OrderTrackingPage() {
                       )}
                     </div>
                     {step < 4 && (
-                      <div className={`flex-1 h-1 mx-2 ${
+                      <div className={`flex-1 h-1 mx-2 transition-all duration-500 ${
                         step < currentStep ? 'bg-secondary' : 'bg-muted'
                       }`}></div>
                     )}
@@ -208,7 +230,7 @@ export default function OrderTrackingPage() {
 
         {/* Pickup Information */}
         {order.status === 'READY' && (
-          <div className="bg-success/10 border-2 border-success rounded-2xl p-6 text-center mb-6">
+          <div className="bg-success/10 border-2 border-success rounded-2xl p-6 text-center mb-6 animate-pulse">
             <CheckCircle className="w-16 h-16 text-success mx-auto mb-4" />
             <h3 className="text-2xl font-bold text-success mb-2">Your order is ready!</h3>
             <p className="text-success-foreground">Please collect from Campus Canteen - Counter #3</p>

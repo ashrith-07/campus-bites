@@ -4,49 +4,132 @@
 
 @layer base {
   :root {
-    --background: 30 25% 96%;
-    --foreground: 0 0% 23%;
+    /* Light cream background */
+    --background: 40 20% 97%;
+    --foreground: 0 0% 10%;
+    
+    /* Pure white cards */
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 23%;
-    --primary: 0 0% 17%;
-    --primary-foreground: 30 25% 96%;
-    --secondary: 26 54% 52%;
+    --card-foreground: 0 0% 10%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 10%;
+    
+    /* Dark text */
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 98%;
+    
+    /* Orange/amber accent color */
+    --secondary: 25 75% 55%;
     --secondary-foreground: 0 0% 100%;
-    --muted: 30 20% 89%;
+    
+    /* Light beige/cream for muted areas */
+    --muted: 40 20% 94%;
     --muted-foreground: 0 0% 45%;
-    --accent: 45 64% 53%;
-    --accent-foreground: 0 0% 17%;
-    --success: 100 20% 53%;
-    --success-foreground: 0 0% 100%;
-    --border: 30 20% 89%;
-    --input: 30 20% 89%;
-    --ring: 26 54% 52%;
-    --radius: 0.75rem;
+    
+    /* Accent similar to muted */
+    --accent: 40 20% 94%;
+    --accent-foreground: 0 0% 9%;
+    
+    /* Red for destructive actions */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    
+    /* Green for success */
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 98%;
+    
+    /* Light borders */
+    --border: 40 20% 88%;
+    --input: 40 20% 88%;
+    
+    /* Orange ring/focus */
+    --ring: 25 75% 55%;
+    --radius: 1rem;
   }
 }
 
 @layer utilities {
-  .shadow-elegant {
-    box-shadow: 0 4px 6px -1px hsl(0 0% 0% / 0.08), 0 2px 4px -1px hsl(0 0% 0% / 0.06);
+  /* Hide scrollbar but keep functionality */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
   }
 
-  .transition-elegant {
-    transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  /* Smooth transitions */
+  .transition-smooth {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
+}
 
-  /* 👇 Add this part */
-  @keyframes slide-in {
-    from {
-      transform: translateX(100%);
-      opacity: 0;
-    }
-    to {
-      transform: translateX(0);
-      opacity: 1;
-    }
+/* Animations */
+@keyframes slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
   }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
 
-  .animate-slide-in {
-    animation: slide-in 0.3s ease-out;
+@keyframes fade-in {
+  from {
+    opacity: 0;
   }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scale-in {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in {
+  animation: slide-in 0.3s ease-out;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.2s ease-out;
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  /* Prevent zoom on input focus */
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+  
+  /* Better touch targets */
+  button, a {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Better focus styles */
+*:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
 }

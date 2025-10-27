@@ -27,7 +27,7 @@ export default function CartSidebar() {
       />
 
       {/* Sidebar */}
-      <div className="fixed right-0 top-0 h-full w-full max-w-md bg-card shadow-2xl z-50 flex flex-col">
+      <div className="fixed inset-y-0 right-0 w-full sm:w-96 bg-card shadow-elegant-lg z-50 flex flex-col animate-slide-in">
         {/* Header */}
         <div className="bg-gradient-to-r from-secondary to-secondary/90 text-secondary-foreground p-6 flex items-center justify-between">
           <div>
