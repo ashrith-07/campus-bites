@@ -12,9 +12,12 @@ const {
 const { 
   authenticateToken, 
   checkVendorRole 
-} = require('../middleware/auth'); 
+} = require('../middleware/auth');
 
-const router = express.Router(); 
+const { validate } = require('../middleware/validate');
+const { checkoutSchema, confirmOrderSchema, updateOrderStatusSchema } = require('../validations/schemas');
+
+const router = express.Router();
 
 // Middleware to authenticate token from query param (for SSE)
 const authenticateSSE = (req, res, next) => {
@@ -33,14 +36,14 @@ const authenticateSSE = (req, res, next) => {
   }
 };
 
-// Customer routes
-router.post('/checkout', authenticateToken, initiateCheckout);
-router.post('/confirm', authenticateToken, confirmOrder);
+// Customer routes with validation
+router.post('/checkout', authenticateToken, validate(checkoutSchema), initiateCheckout);
+router.post('/confirm', authenticateToken, validate(confirmOrderSchema), confirmOrder);
 router.get('/stream', authenticateSSE, connectToOrderStream);
 router.get('/', authenticateToken, getOrders);
 router.get('/:id', authenticateToken, getOrderById);
 
-// Vendor routes
-router.put('/:id', authenticateToken, checkVendorRole, updateOrder);
+// Vendor routes with validation
+router.put('/:id', authenticateToken, checkVendorRole, validate(updateOrderStatusSchema), updateOrder);
 
 module.exports = router;

@@ -14,6 +14,14 @@ export default function Navbar() {
   const router = useRouter();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/?search=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
 
   return (
     <>
@@ -27,7 +35,7 @@ export default function Navbar() {
                 <h1 className="font-serif text-lg sm:text-xl font-bold text-foreground">Campus Bites</h1>
                 <p className="text-xs text-muted-foreground flex items-center gap-1">
                   <span className="w-2 h-2 rounded-full bg-success"></span>
-                  Open until 10 PM
+                  Open until 9 PM
                 </p>
               </div>
               <div className="sm:hidden">
@@ -37,14 +45,16 @@ export default function Navbar() {
 
             {/* Search Bar - Desktop Only */}
             <div className="hidden md:flex flex-1 max-w-2xl">
-              <div className="relative w-full">
+              <form onSubmit={handleSearch} className="relative w-full">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <input
                   type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search for dishes..."
                   className="w-full pl-12 pr-4 py-3 bg-muted rounded-xl border border-border focus:outline-none focus:ring-2 focus:ring-secondary transition-all"
                 />
-              </div>
+              </form>
             </div>
 
             {/* Right Side Icons */}
@@ -161,7 +171,7 @@ export default function Navbar() {
                     className="p-2 hover:bg-muted rounded-full transition-colors"
                     title="Cart"
                   >
-                    <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6 text-foreground" />
+                  <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6 text-foreground" />
                   </button>
                 </>
               )}
@@ -170,14 +180,16 @@ export default function Navbar() {
 
           {/* Mobile Search Bar */}
           <div className="md:hidden mt-3">
-            <div className="relative">
+            <form onSubmit={handleSearch} className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input
                 type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search for dishes..."
                 className="w-full pl-10 pr-4 py-2 bg-muted rounded-lg border border-border focus:outline-none focus:ring-2 focus:ring-secondary transition-all text-sm"
               />
-            </div>
+            </form>
           </div>
         </div>
 

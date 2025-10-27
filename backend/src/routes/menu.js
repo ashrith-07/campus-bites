@@ -1,46 +1,24 @@
 const express = require('express');
 const { 
   getAllMenuItems, 
-  getMenuItemById, 
+  getMenuItemById,
   createMenuItem,
-  updateMenuItem, 
-  deleteMenuItem  
+  updateMenuItem,
+  deleteMenuItem
 } = require('../controllers/menuController');
+const { authenticateToken, checkVendorRole } = require('../middleware/auth');
+const { validate } = require('../middleware/validate');
+const { menuItemSchema } = require('../validations/schemas');
 
-const { 
-  authenticateToken, 
-  checkVendorRole 
-} = require('../middleware/auth'); 
+const router = express.Router();
 
-const router = express.Router(); 
-
-
+// Public routes
 router.get('/items', getAllMenuItems);
 router.get('/items/:id', getMenuItemById);
 
-
-router.post(
-  '/items', 
-  authenticateToken, 
-  checkVendorRole, 
-  createMenuItem
-);
-
-
-router.put(
-  '/items/:id', 
-  authenticateToken, 
-  checkVendorRole, 
-  updateMenuItem
-);
-
-
-router.delete(
-  '/items/:id', 
-  authenticateToken, 
-  checkVendorRole, 
-  deleteMenuItem
-);
-
+// Vendor only routes
+router.post('/items', authenticateToken, checkVendorRole, validate(menuItemSchema), createMenuItem);
+router.put('/items/:id', authenticateToken, checkVendorRole, validate(menuItemSchema), updateMenuItem);
+router.delete('/items/:id', authenticateToken, checkVendorRole, deleteMenuItem);
 
 module.exports = router;

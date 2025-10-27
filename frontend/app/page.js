@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Navbar from '@/components/ui/Navbar';
 import MenuCard from '@/components/ui/MenuCard';
 import CartSidebar from '@/components/ui/CartSidebar';
@@ -8,6 +9,9 @@ import { api } from '@/lib/api';
 const categories = ['All', 'Pizza', 'Rolls', 'Beverages', 'Desserts', 'Sandwiches', 'Snacks'];
 
 export default function HomePage() {
+  const searchParams = useSearchParams();
+  const searchQuery = searchParams.get('search') || '';
+  
   const [menuItems, setMenuItems] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [loading, setLoading] = useState(true);
@@ -30,9 +34,15 @@ export default function HomePage() {
     }
   };
 
-  const filteredItems = selectedCategory === 'All'
-    ? menuItems
-    : menuItems.filter(item => item.category === selectedCategory);
+  // Filter by category and search query
+  const filteredItems = menuItems.filter(item => {
+    const matchesCategory = selectedCategory === 'All' || item.category === selectedCategory;
+    const matchesSearch = !searchQuery || 
+      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.description?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    return matchesCategory && matchesSearch;
+  });
 
   return (
     <div className="min-h-screen bg-background">
@@ -47,6 +57,11 @@ export default function HomePage() {
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Order from anywhere on campus, pick up fresh when ready
           </p>
+          {searchQuery && (
+            <p className="mt-4 text-secondary font-semibold">
+              Showing results for: "{searchQuery}"
+            </p>
+          )}
         </div>
       </section>
 
@@ -60,7 +75,7 @@ export default function HomePage() {
               className={`px-6 py-3 rounded-full text-sm font-semibold whitespace-nowrap transition-all ${
                 selectedCategory === category
                   ? 'bg-secondary text-secondary-foreground shadow-lg scale-105'
-                  : 'bg-muted text-foreground hover:bg-border'
+                  : 'bg-card text-foreground hover:bg-muted border border-border'
               }`}
             >
               {category}
@@ -82,10 +97,15 @@ export default function HomePage() {
           </div>
         ) : filteredItems.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-muted-foreground text-lg">No items found in this category</p>
+            <p className="text-muted-foreground text-lg">
+              {searchQuery 
+                ? `No items found for "${searchQuery}"`
+                : 'No items found in this category'
+              }
+            </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredItems.map((item) => (
               <MenuCard key={item.id} item={item} />
             ))}
@@ -98,4 +118,3 @@ export default function HomePage() {
     </div>
   );
 }
-
