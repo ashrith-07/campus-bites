@@ -27,27 +27,31 @@ const fetchMenuItems = async () => {
     setLoading(true);
     const data = await api.getMenuItems();
 
-    console.log('First item from API:', data[0]);
-    console.log('First item imageUrl:', data[0]?.imageUrl);
-
     const formatted = data.map(item => {
-      let imageUrl;
+      let imageUrl = null;
+      let isEmoji = false;
       
-      if (!item.imageUrl) {
-        imageUrl = null;
-      } else if (item.imageUrl.startsWith('http')) {
-        imageUrl = item.imageUrl;
-      } else {
-        const baseUrl = (process.env.NEXT_PUBLIC_API_URL?.replace('/api', '')) || 'https://campus-bites-server.vercel.app';
-        const imagePath = item.imageUrl.startsWith('/') ? item.imageUrl : `/${item.imageUrl}`;
-        imageUrl = `${baseUrl}${imagePath}`;
+      if (item.imageUrl) {
+        // Check if it's an emoji (simple check: if it's very short and doesn't start with / or http)
+        const isEmojiCheck = item.imageUrl.length <= 2 && !item.imageUrl.startsWith('/') && !item.imageUrl.startsWith('http');
+        
+        if (isEmojiCheck) {
+          isEmoji = true;
+          imageUrl = item.imageUrl; // Keep the emoji
+        } else if (item.imageUrl.startsWith('http')) {
+          imageUrl = item.imageUrl;
+        } else {
+          // Relative path - construct full URL
+          const baseUrl = (process.env.NEXT_PUBLIC_API_URL?.replace('/api', '')) || 'https://campus-bites-server.vercel.app';
+          const imagePath = item.imageUrl.startsWith('/') ? item.imageUrl : `/${item.imageUrl}`;
+          imageUrl = `${baseUrl}${imagePath}`;
+        }
       }
-      
-      console.log(`Item: ${item.name}, Original: ${item.imageUrl}, Final: ${imageUrl}`);
       
       return {
         ...item,
         imageUrl,
+        isEmoji,
       };
     });
 

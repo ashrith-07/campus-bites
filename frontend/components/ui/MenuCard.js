@@ -14,9 +14,17 @@ export default function MenuCard({ item }) {
 
   return (
     <div className="bg-card rounded-xl sm:rounded-2xl overflow-hidden shadow-elegant border border-border hover:shadow-elegant-lg transition-all duration-300 hover:-translate-y-1">
-      {/* Image */}
-      <div className="relative h-40 sm:h-48 overflow-hidden bg-muted flex items-center justify-center">
-        {!imageError && item.imageUrl ? (
+      {/* Image or Emoji */}
+      <div className="relative h-40 sm:h-48 overflow-hidden bg-gradient-to-br from-muted to-background flex items-center justify-center">
+        {item.isEmoji ? (
+          // Display emoji with circular background
+          <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-background/80 flex items-center justify-center shadow-lg">
+            <span className="text-5xl sm:text-6xl">
+              {item.imageUrl}
+            </span>
+          </div>
+        ) : !imageError && item.imageUrl ? (
+          // Display actual image
           <>
             {imageLoading && (
               <div className="absolute inset-0 flex items-center justify-center">
@@ -28,19 +36,17 @@ export default function MenuCard({ item }) {
               src={item.imageUrl} 
               alt={item.name}
               className={`w-full h-full object-cover transition-opacity duration-300 ${imageLoading ? 'opacity-0' : 'opacity-100'}`}
-              onError={(e) => {
-                console.error('Image failed to load:', item.imageUrl);
-                console.error('Status:', e.target.naturalWidth === 0 ? 'Failed' : 'Loaded');
+              onError={() => {
                 setImageError(true);
                 setImageLoading(false);
               }}
               onLoad={() => {
-                console.log('Image loaded successfully:', item.imageUrl);
                 setImageLoading(false);
               }}
             />
           </>
         ) : (
+          // No image placeholder
           <div className="flex flex-col items-center justify-center text-muted-foreground">
             <ImageOff className="w-12 h-12 mb-2" />
             <span className="text-sm">No image</span>
