@@ -63,7 +63,7 @@ const handlePlaceOrder = async () => {
     console.log('Starting checkout...');
     
     // Step 1: Initiate checkout
-    const checkoutResponse = await fetch('http://localhost:3001/api/orders/checkout', {
+    const checkoutResponse = await fetch('https://campus-bites-server.vercel.app/api/orders/checkout', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -87,7 +87,7 @@ const handlePlaceOrder = async () => {
     console.log('Checkout response:', checkoutData);
     
     // Step 2: Confirm order
-    const confirmResponse = await fetch('http://localhost:3001/api/orders/confirm', {
+    const confirmResponse = await fetch('https://campus-bites-server.vercel.app/api/orders/confirm', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

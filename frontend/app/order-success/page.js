@@ -30,7 +30,7 @@ function OrderSuccessContent() {
   const fetchOrderDetails = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:3001/api/orders/${orderId}`, {
+      const response = await fetch(`https://campus-bites-server.vercel.app/api/orders/${orderId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

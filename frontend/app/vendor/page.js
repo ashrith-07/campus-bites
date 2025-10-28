@@ -122,7 +122,7 @@ function OrdersManagement({ token }) {
 
   const fetchOrders = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/orders', {
+      const response = await fetch('https://campus-bites-server.vercel.app/api/orders', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
@@ -136,7 +136,7 @@ function OrdersManagement({ token }) {
 
   const updateOrderStatus = async (orderId, newStatus) => {
     try {
-      const response = await fetch(`http://localhost:3001/api/orders/${orderId}`, {
+      const response = await fetch(`https://campus-bites-server.vercel.app/api/orders/${orderId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -256,7 +256,7 @@ function MenuManagement({ token }) {
 
   const fetchMenuItems = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/menu/items');
+      const response = await fetch('https://campus-bites-server.vercel.app/api/menu/items');
       const data = await response.json();
       setMenuItems(data);
     } catch (error) {
@@ -271,8 +271,8 @@ function MenuManagement({ token }) {
     
     try {
       const url = editingItem 
-        ? `http://localhost:3001/api/menu/items/${editingItem.id}`
-        : 'http://localhost:3001/api/menu/items';
+        ? `https://campus-bites-server.vercel.app/api/menu/items/${editingItem.id}`
+        : 'https://campus-bites-server.vercel.app/api/menu/items';
       
       const method = editingItem ? 'PUT' : 'POST';
 
@@ -323,7 +323,7 @@ function MenuManagement({ token }) {
     if (!confirm('Are you sure you want to delete this item?')) return;
 
     try {
-      const response = await fetch(`http://localhost:3001/api/menu/items/${id}`, {
+      const response = await fetch(`https://campus-bites-server.vercel.app/api/menu/items/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -563,7 +563,7 @@ function StatusOverview({ token }) {
 
   const fetchStats = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/orders', {
+      const response = await fetch('https://campus-bites-server.vercel.app/api/orders', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();

@@ -52,7 +52,7 @@ export function SSEProvider({ children }) {
       return;
     }
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://campus-bites-server.vercel.app/api';
     // Pass token as query parameter since EventSource doesn't support headers
     const url = `${apiUrl}/orders/stream?token=${token}`;
 
