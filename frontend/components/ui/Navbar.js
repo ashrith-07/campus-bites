@@ -99,9 +99,9 @@ export default function Navbar() {
                           )}
                         </button>
 
-                        {/* Notifications Dropdown */}
+                        {/* ✅ Notifications Dropdown (z-index fix) */}
                         {showNotifications && (
-                          <div className="absolute right-0 mt-2 w-80 bg-card border border-border rounded-xl shadow-elegant-lg max-h-96 overflow-y-auto">
+                          <div className="absolute right-0 mt-2 w-80 bg-card border border-border rounded-xl shadow-elegant-lg max-h-96 overflow-y-auto z-50">
                             <div className="p-4 border-b border-border flex items-center justify-between">
                               <h3 className="font-semibold text-foreground">Notifications</h3>
                               {notifications.length > 0 && (
@@ -279,10 +279,10 @@ export default function Navbar() {
         )}
       </header>
 
-      {/* Overlay to close dropdowns */}
+      {/* ✅ Overlay z-index fix */}
       {(showNotifications || showMobileMenu) && (
         <div
-          className="fixed inset-0 z-30 bg-black/20"
+          className="fixed inset-0 z-40 bg-black/20"
           onClick={() => {
             setShowNotifications(false);
             setShowMobileMenu(false);

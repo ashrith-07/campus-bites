@@ -9,16 +9,31 @@ export default function VendorDashboard() {
   const router = useRouter();
   const { user, token, logout, loading: authLoading } = useAuth();
   const [activeTab, setActiveTab] = useState('orders');
+  const [storeOpen, setStoreOpen] = useState(true); // ✅ Added
+
+  // ✅ Load store status from localStorage
+  useEffect(() => {
+    const savedStatus = localStorage.getItem('storeOpen');
+    if (savedStatus !== null) {
+      setStoreOpen(JSON.parse(savedStatus));
+    }
+  }, []);
+
+  // ✅ Toggle and persist store status
+  const toggleStoreStatus = () => {
+    const newStatus = !storeOpen;
+    setStoreOpen(newStatus);
+    localStorage.setItem('storeOpen', JSON.stringify(newStatus));
+  };
 
   useEffect(() => {
     if (authLoading) return;
-    
+
     if (!token) {
       router.push('/auth/login');
       return;
     }
 
-    // Check if user is vendor
     if (user && user.role !== 'VENDOR') {
       router.push('/');
       return;
@@ -45,21 +60,44 @@ export default function VendorDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
+      {/* ✅ Header with Store Status Toggle */}
       <header className="bg-card border-b border-border shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h1 className="font-serif text-2xl font-bold text-foreground">Vendor Dashboard</h1>
+              <h1 className="font-serif text-xl sm:text-2xl font-bold text-foreground">Vendor Dashboard</h1>
               <p className="text-sm text-muted-foreground">Manage your orders, menu items, and track status</p>
             </div>
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2 bg-destructive text-destructive-foreground rounded-lg font-semibold hover:opacity-90 transition"
-            >
-              <LogOut className="w-4 h-4" />
-              Logout
-            </button>
+
+            <div className="flex items-center gap-3">
+              {/* Store Status Toggle */}
+              <div className="flex items-center gap-3 px-4 py-2 bg-muted rounded-lg">
+                <span className="text-sm font-semibold">Store Status:</span>
+                <button
+                  onClick={toggleStoreStatus}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    storeOpen ? 'bg-success' : 'bg-destructive'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      storeOpen ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+                <span className={`text-sm font-bold ${storeOpen ? 'text-success' : 'text-destructive'}`}>
+                  {storeOpen ? 'Open' : 'Closed'}
+                </span>
+              </div>
+
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 px-4 py-2 bg-destructive text-destructive-foreground rounded-lg font-semibold hover:opacity-90 transition"
+              >
+                <LogOut className="w-4 h-4" />
+                <span className="hidden sm:inline">Logout</span>
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -111,7 +149,7 @@ export default function VendorDashboard() {
   );
 }
 
-// Orders Management Component
+// ========================= Orders Management =========================
 function OrdersManagement({ token }) {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -146,7 +184,7 @@ function OrdersManagement({ token }) {
       });
 
       if (response.ok) {
-        fetchOrders(); // Refresh orders
+        fetchOrders();
         alert(`Order #${orderId} updated to ${newStatus}`);
       }
     } catch (error) {
