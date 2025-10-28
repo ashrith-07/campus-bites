@@ -245,7 +245,7 @@ function MenuManagement({ token }) {
     price: '',
     category: 'Pizza',
     imageUrl: '',
-    stock: 0,
+    // stock: 0,
     isAvailable: true,
     popular: false
   });
@@ -267,42 +267,40 @@ function MenuManagement({ token }) {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
+  
+  try {
+    const url = editingItem 
+      ? `http://localhost:3001/api/menu/items/${editingItem.id}`
+      : 'http://localhost:3001/api/menu/items';
     
-    try {
-      const url = editingItem 
-        ? `https://campus-bites-server.vercel.app/api/menu/items/${editingItem.id}`
-        : 'https://campus-bites-server.vercel.app/api/menu/items';
-      
-      const method = editingItem ? 'PUT' : 'POST';
+    const method = editingItem ? 'PUT' : 'POST';
 
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          ...formData,
-          price: parseFloat(formData.price)
-        })
-      });
+    const response = await fetch(url, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        ...formData,
+        price: parseFloat(formData.price),
+        stock: 100 // Default stock
+      })
+    });
 
-      if (response.ok) {
-        alert(editingItem ? 'Item updated successfully!' : 'Item created successfully!');
-        setShowModal(false);
-        setEditingItem(null);
-        resetForm();
-        fetchMenuItems();
-      } else {
-        const error = await response.json();
-        alert(error.error || 'Failed to save item');
-      }
-    } catch (error) {
-      console.error('Error saving menu item:', error);
-      alert('Failed to save item');
+    if (response.ok) {
+      alert(editingItem ? 'Item updated successfully!' : 'Item created successfully!');
+      setShowModal(false);
+      setEditingItem(null);
+      resetForm();
+      fetchMenuItems();
     }
-  };
+  } catch (error) {
+    console.error('Error saving menu item:', error);
+    alert('Failed to save item');
+  }
+};
 
   const handleEdit = (item) => {
     setEditingItem(item);
@@ -487,7 +485,7 @@ function MenuManagement({ token }) {
                 />
               </div>
 
-              <div>
+              {/* <div>
                 <label className="block text-sm font-semibold mb-1">Stock</label>
                 <input
                   type="number"
@@ -496,7 +494,7 @@ function MenuManagement({ token }) {
                   className="w-full px-4 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-secondary"
                   required
                 />
-              </div>
+              </div> */}
 
               <div className="flex items-center gap-4">
                 <label className="flex items-center gap-2">

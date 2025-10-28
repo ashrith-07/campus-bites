@@ -133,3 +133,37 @@ html {
   outline: 2px solid hsl(var(--ring));
   outline-offset: 2px;
 }
+/* Enhanced Mobile Responsiveness */
+@media (max-width: 640px) {
+  /* Reduce padding on mobile */
+  .max-w-7xl {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  /* Smaller font sizes on mobile */
+  h1 {
+    font-size: 1.5rem !important;
+  }
+
+  h2 {
+    font-size: 1.25rem !important;
+  }
+
+  /* Better touch targets */
+  button, a, input {
+    min-height: 44px;
+  }
+
+  /* Stack elements vertically on mobile */
+  .sm\:flex-row {
+    flex-direction: column;
+  }
+}
+
+/* Tablet adjustments */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .grid {
+    gap: 1rem;
+  }
+}

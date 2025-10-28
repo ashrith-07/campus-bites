@@ -6,50 +6,65 @@ import { useSearchParams } from 'next/navigation';
 import Navbar from '@/components/ui/Navbar';
 import MenuCard from '@/components/ui/MenuCard';
 import CartSidebar from '@/components/ui/CartSidebar';
+import StoreClosed from '@/components/ui/StoreClosed';
 import { api } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
 
 function HomeContent() {
   const categories = ['All', 'Pizza', 'Rolls', 'Beverages', 'Desserts', 'Sandwiches', 'Snacks'];
   const searchParams = useSearchParams();
   const searchQuery = searchParams.get('search') || '';
-  
+  const { user } = useAuth();
+
   const [menuItems, setMenuItems] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
+  const [storeOpen, setStoreOpen] = useState(true);
 
   useEffect(() => {
-    const fetchMenuItems = async () => {
-      try {
-        setLoading(true);
-        const data = await api.getMenuItems();
-        setMenuItems(data);
-      } catch (err) {
-        setError('Failed to load menu items');
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
+    // Check store status
+    const savedStatus = localStorage.getItem('storeOpen');
+    if (savedStatus !== null) {
+      setStoreOpen(JSON.parse(savedStatus));
+    }
+
     fetchMenuItems();
   }, []);
 
+  const fetchMenuItems = async () => {
+    try {
+      setLoading(true);
+      const data = await api.getMenuItems();
+      setMenuItems(data);
+    } catch (err) {
+      setError('Failed to load menu items');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // If store is closed and user is not a vendor, show closed page
+  if (!storeOpen && user?.role !== 'VENDOR') {
+    return <StoreClosed />;
+  }
 
   // Filter by category and search query
   const filteredItems = menuItems.filter(item => {
     const matchesCategory = selectedCategory === 'All' || item.category === selectedCategory;
-    const matchesSearch = !searchQuery || 
+    const matchesSearch =
+      !searchQuery ||
       item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.description?.toLowerCase().includes(searchQuery.toLowerCase());
-    
+
     return matchesCategory && matchesSearch;
   });
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar/>
-      
+      <Navbar />
+
       {/* Hero Section */}
       <section className="bg-gradient-to-b from-muted to-background py-16">
         <div className="max-w-7xl mx-auto px-6 text-center">
@@ -68,13 +83,13 @@ function HomeContent() {
       </section>
 
       {/* Category Filter */}
-      <section className="max-w-7xl mx-auto px-6 py-8">
-        <div className="flex gap-3 overflow-x-auto pb-4 scrollbar-hide">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-4 scrollbar-hide">
           {categories.map((category) => (
             <button
               key={category}
               onClick={() => setSelectedCategory(category)}
-              className={`px-6 py-3 rounded-full text-sm font-semibold whitespace-nowrap transition-all ${
+              className={`px-4 sm:px-6 py-2 sm:py-3 rounded-full text-xs sm:text-sm font-semibold whitespace-nowrap transition-all ${
                 selectedCategory === category
                   ? 'bg-secondary text-secondary-foreground shadow-lg scale-105'
                   : 'bg-card text-foreground hover:bg-muted border border-border'
@@ -100,10 +115,9 @@ function HomeContent() {
         ) : filteredItems.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-muted-foreground text-lg">
-              {searchQuery 
+              {searchQuery
                 ? `No items found for "${searchQuery}"`
-                : 'No items found in this category'
-              }
+                : 'No items found in this category'}
             </p>
           </div>
         ) : (
@@ -116,18 +130,20 @@ function HomeContent() {
       </section>
 
       {/* Cart Sidebar */}
-      <CartSidebar/>
+      <CartSidebar />
     </div>
   );
 }
 
 export default function HomePage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-secondary border-t-transparent mx-auto"></div>
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-secondary border-t-transparent mx-auto"></div>
+        </div>
+      }
+    >
       <HomeContent />
     </Suspense>
   );

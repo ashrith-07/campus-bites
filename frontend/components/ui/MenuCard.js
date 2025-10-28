@@ -1,66 +1,61 @@
 'use client';
-import { Star, Clock, Plus } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
+import { Star, Clock, Plus } from 'lucide-react';
 
 export default function MenuCard({ item }) {
   const { addToCart } = useCart();
-
-   if (!item) return null;
 
   const handleAddToCart = () => {
     addToCart(item);
   };
 
   return (
-    <div className="bg-card rounded-2xl shadow-elegant border border-border overflow-hidden hover:shadow-elegant-lg transition-all duration-300 hover:-translate-y-1">
-      <div className="p-6 relative">
-        {/* Popular Badge */}
+    <div className="bg-card rounded-xl sm:rounded-2xl overflow-hidden shadow-elegant border border-border hover:shadow-elegant-lg transition-all duration-300 hover:-translate-y-1">
+      {/* Image */}
+      <div className="relative h-40 sm:h-48 overflow-hidden">
+        <img 
+          src={item.imageUrl} 
+          alt={item.name}
+          className="w-full h-full object-cover"
+        />
         {item.popular && (
-          <div className="absolute top-4 right-4">
-            <span className="bg-accent text-accent-foreground text-xs font-semibold px-3 py-1 rounded-full">
-              Popular
-            </span>
-          </div>
+          <span className="absolute top-2 sm:top-3 right-2 sm:right-3 bg-secondary text-secondary-foreground text-xs font-bold px-2 sm:px-3 py-1 rounded-full">
+            Popular
+          </span>
         )}
+      </div>
 
-        {/* Item Image/Emoji */}
-        <div className="flex items-center justify-center w-24 h-24 mx-auto mb-4 bg-muted rounded-full">
-          <span className="text-5xl">{item.imageUrl || '🍽️'}</span>
-        </div>
-
-        {/* Item Name */}
-        <h3 className="font-serif text-xl font-bold text-card-foreground mb-2 text-center">
+      {/* Content */}
+      <div className="p-3 sm:p-4">
+        <h3 className="font-serif text-base sm:text-lg font-bold text-foreground mb-1 sm:mb-2 line-clamp-1">
           {item.name}
         </h3>
-
-        {/* Description */}
-        <p className="text-sm text-muted-foreground text-center mb-4 line-clamp-2 min-h-[40px]">
-          {item.description || 'Delicious food item'}
+        <p className="text-xs sm:text-sm text-muted-foreground mb-2 sm:mb-3 line-clamp-2 h-8 sm:h-10">
+          {item.description}
         </p>
 
         {/* Rating & Time */}
-        <div className="flex items-center justify-center gap-4 mb-4">
+        <div className="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4 text-xs sm:text-sm">
           <div className="flex items-center gap-1">
-            <Star className="w-4 h-4 text-accent fill-accent" />
-            <span className="text-sm font-medium text-foreground">4.5</span>
+            <Star className="w-3 h-3 sm:w-4 sm:h-4 fill-secondary text-secondary" />
+            <span className="font-semibold">4.5</span>
           </div>
           <div className="flex items-center gap-1 text-muted-foreground">
-            <Clock className="w-4 h-4" />
-            <span className="text-sm">15 min</span>
+            <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
+            <span>15 min</span>
           </div>
         </div>
 
         {/* Price & Add Button */}
         <div className="flex items-center justify-between">
-          <span className="text-2xl font-bold text-foreground">
+          <span className="font-bold text-lg sm:text-2xl text-secondary">
             ₹{parseFloat(item.price).toFixed(0)}
           </span>
           <button
             onClick={handleAddToCart}
-            className="bg-secondary text-secondary-foreground px-6 py-2 rounded-xl font-semibold hover:opacity-90 transition-all flex items-center gap-2"
+            className="bg-secondary text-secondary-foreground p-2 sm:p-2.5 rounded-lg sm:rounded-xl hover:opacity-90 transition-all active:scale-95"
           >
-            <Plus className="w-4 h-4" />
-            Add
+            <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
         </div>
       </div>
