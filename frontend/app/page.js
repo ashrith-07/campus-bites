@@ -27,6 +27,9 @@ const fetchMenuItems = async () => {
     setLoading(true);
     const data = await api.getMenuItems();
 
+    console.log('First item from API:', data[0]);
+    console.log('First item imageUrl:', data[0]?.imageUrl);
+
     const formatted = data.map(item => {
       let imageUrl;
       
@@ -39,6 +42,8 @@ const fetchMenuItems = async () => {
         const imagePath = item.imageUrl.startsWith('/') ? item.imageUrl : `/${item.imageUrl}`;
         imageUrl = `${baseUrl}${imagePath}`;
       }
+      
+      console.log(`Item: ${item.name}, Original: ${item.imageUrl}, Final: ${imageUrl}`);
       
       return {
         ...item,
