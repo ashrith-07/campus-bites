@@ -208,6 +208,7 @@ const updateOrder = async (req, res) => {
 };
 
 // 6. GET /api/orders/stream (SSE)
+// 6. GET /api/orders/stream (SSE)
 const connectToOrderStream = (req, res) => {
   const customerId = req.user.userId;
 
@@ -216,10 +217,10 @@ const connectToOrderStream = (req, res) => {
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
   res.setHeader('Access-Control-Allow-Origin', process.env.FRONTEND_URL || 'https://campus-bites-web.vercel.app');
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Credentials', 'true'); // Add this if needed
   res.setHeader('X-Accel-Buffering', 'no');
   
-  // Flush headers to establish connection immediately
+  // IMPORTANT: Flush headers to establish connection immediately
   res.flushHeaders();
   
   // Send initial message
@@ -236,35 +237,21 @@ const connectToOrderStream = (req, res) => {
     } catch (error) {
       console.error('Error sending heartbeat:', error);
       clearInterval(heartbeat);
-      cleanup();
     }
   }, 30000);
 
-  // CRITICAL FIX: Close connection after 4.5 minutes (270 seconds) to avoid Vercel timeout
-  // Client will automatically reconnect via EventSource
-  const connectionTimeout = setTimeout(() => {
-    console.log(`Proactively closing SSE connection for user ${customerId} before timeout`);
-    cleanup();
-    res.end();
-  }, 270000); // 270 seconds = 4.5 minutes (30 seconds before Vercel's 300s timeout)
-
-  // Cleanup function
-  const cleanup = () => {
+  // Cleanup
+  req.on('close', () => {
     clearInterval(heartbeat);
-    clearTimeout(connectionTimeout);
     clients.delete(customerId);
     console.log(`SSE connection closed for user ${customerId}`);
-  };
-
-  // Cleanup on client disconnect
-  req.on('close', () => {
-    cleanup();
   });
   
   // Handle errors
   req.on('error', (error) => {
     console.error('SSE connection error:', error);
-    cleanup();
+    clearInterval(heartbeat);
+    clients.delete(customerId);
   });
 };
 
@@ -276,3 +263,4 @@ module.exports = {
   updateOrder,
   connectToOrderStream,
 };
+
