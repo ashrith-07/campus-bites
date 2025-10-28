@@ -1,6 +1,7 @@
 'use client';
 import { createContext, useState, useContext, useEffect } from 'react';
 import { api } from '@/lib/api';
+import { useRouter } from 'next/navigation';
 
 const AuthContext = createContext();
 
@@ -10,7 +11,6 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Defer state updates to avoid React warning
     Promise.resolve().then(() => {
       const storedToken = localStorage.getItem('token');
       const storedUser = localStorage.getItem('user');
