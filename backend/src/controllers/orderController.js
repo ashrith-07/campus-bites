@@ -1,21 +1,41 @@
 const prisma = require('../utils/prisma');
 
-// SSE clients storage
+// SSE clients storage - stores both response object and heartbeat interval
 const clients = new Map();
 
-// SSE Helper
+// SSE Helper - Send order status update to specific user
 const sendOrderStatusUpdate = (userId, order) => {
-  const clientRes = clients.get(userId);
-  if (clientRes) {
-    const eventData = JSON.stringify({
-      orderId: order.id,
-      status: order.status,
-      message: `Order #${order.id} is now ${order.status.toLowerCase()}.`
-    });
-    
-    clientRes.write(`event: order_update\n`);
-    clientRes.write(`data: ${eventData}\n\n`);
-    console.log(`SSE event sent to user ${userId} for order ${order.id}.`);
+  const client = clients.get(userId);
+  if (client && client.res) {
+    try {
+      const eventData = JSON.stringify({
+        orderId: order.id,
+        status: order.status,
+        message: `Order #${order.id} is now ${order.status.toLowerCase()}.`
+      });
+      
+      client.res.write(`event: order_update\n`);
+      client.res.write(`data: ${eventData}\n\n`);
+      console.log(`✅ SSE event sent to user ${userId} for order ${order.id}`);
+    } catch (error) {
+      console.error(`❌ Error sending SSE to user ${userId}:`, error.message);
+      // Clean up dead connection
+      cleanupClient(userId);
+    }
+  } else {
+    console.log(`⚠️ No active SSE connection for user ${userId}`);
+  }
+};
+
+// Helper to cleanup client connection
+const cleanupClient = (userId) => {
+  const client = clients.get(userId);
+  if (client) {
+    if (client.heartbeat) {
+      clearInterval(client.heartbeat);
+    }
+    clients.delete(userId);
+    console.log(`🧹 Cleaned up SSE connection for user ${userId}`);
   }
 };
 
@@ -89,6 +109,9 @@ const confirmOrder = async (req, res) => {
     });
 
     console.log('Order confirmed successfully:', newOrder);
+
+    // Send SSE notification to user if they're connected
+    sendOrderStatusUpdate(customerId, newOrder);
 
     res.status(201).json({ 
       success: true,
@@ -189,7 +212,9 @@ const updateOrder = async (req, res) => {
       select: { id: true, status: true, userId: true } 
     });
 
-    // Send SSE update
+    console.log(`Order ${orderId} updated to ${status} for user ${updatedOrder.userId}`);
+
+    // Send SSE update to the customer
     sendOrderStatusUpdate(updatedOrder.userId, updatedOrder);
     
     res.status(200).json({ 
@@ -208,51 +233,86 @@ const updateOrder = async (req, res) => {
 };
 
 // 6. GET /api/orders/stream (SSE)
-// 6. GET /api/orders/stream (SSE)
 const connectToOrderStream = (req, res) => {
   const customerId = req.user.userId;
 
-  // Set SSE headers
+  // Check if user already has an active connection
+  const existingClient = clients.get(customerId);
+  if (existingClient) {
+    console.log(`⚠️ User ${customerId} already has an active SSE connection. Closing old one.`);
+    cleanupClient(customerId);
+  }
+
+  // Set SSE headers - DON'T set CORS here, it's handled in middleware
   res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Cache-Control', 'no-cache, no-transform');
   res.setHeader('Connection', 'keep-alive');
-  res.setHeader('Access-Control-Allow-Origin', process.env.FRONTEND_URL || 'https://campus-bites-web.vercel.app');
-  res.setHeader('Access-Control-Allow-Credentials', 'true'); // Add this if needed
-  res.setHeader('X-Accel-Buffering', 'no');
+  res.setHeader('X-Accel-Buffering', 'no'); // Disable buffering for nginx
   
-  // IMPORTANT: Flush headers to establish connection immediately
-  res.flushHeaders();
+  // Flush headers to establish connection immediately
+  if (res.flushHeaders) {
+    res.flushHeaders();
+  }
   
-  // Send initial message
-  res.write(`data: ${JSON.stringify({ message: "Connected to Campus Bites order stream." })}\n\n`);
+  // Send initial connection message
+  try {
+    res.write(`data: ${JSON.stringify({ 
+      message: "Connected to Campus Bites order stream.",
+      userId: customerId,
+      timestamp: new Date().toISOString()
+    })}\n\n`);
+  } catch (error) {
+    console.error('Error sending initial message:', error);
+    return;
+  }
 
-  // Store connection
-  clients.set(customerId, res);
-  console.log(`SSE connection established for user ${customerId}`);
+  console.log(`✅ SSE connection established for user ${customerId}`);
 
-  // Heartbeat every 30 seconds
+  // Setup heartbeat every 30 seconds
   const heartbeat = setInterval(() => {
     try {
-      res.write(`: heartbeat\n\n`);
+      res.write(`: heartbeat ${new Date().toISOString()}\n\n`);
     } catch (error) {
-      console.error('Error sending heartbeat:', error);
-      clearInterval(heartbeat);
+      console.error(`❌ Error sending heartbeat to user ${customerId}:`, error.message);
+      cleanupClient(customerId);
     }
   }, 30000);
 
-  // Cleanup
+  // Store connection with heartbeat reference
+  clients.set(customerId, {
+    res: res,
+    heartbeat: heartbeat,
+    connectedAt: new Date()
+  });
+
+  // Cleanup on connection close
   req.on('close', () => {
-    clearInterval(heartbeat);
-    clients.delete(customerId);
-    console.log(`SSE connection closed for user ${customerId}`);
+    console.log(`🔌 SSE connection closed by client for user ${customerId}`);
+    cleanupClient(customerId);
   });
   
   // Handle errors
   req.on('error', (error) => {
-    console.error('SSE connection error:', error);
-    clearInterval(heartbeat);
-    clients.delete(customerId);
+    console.error(`❌ SSE connection error for user ${customerId}:`, error.message);
+    cleanupClient(customerId);
   });
+
+  // Handle response finish
+  res.on('finish', () => {
+    console.log(`🏁 SSE response finished for user ${customerId}`);
+    cleanupClient(customerId);
+  });
+
+  // Handle response errors
+  res.on('error', (error) => {
+    console.error(`❌ SSE response error for user ${customerId}:`, error.message);
+    cleanupClient(customerId);
+  });
+};
+
+// Export active clients count (useful for monitoring)
+const getActiveConnectionsCount = () => {
+  return clients.size;
 };
 
 module.exports = {
@@ -262,5 +322,5 @@ module.exports = {
   getOrderById,
   updateOrder,
   connectToOrderStream,
+  getActiveConnectionsCount
 };
-
