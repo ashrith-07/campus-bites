@@ -24,7 +24,11 @@ const authenticateSSE = (req, res, next) => {
   const token = req.query.token || req.headers.authorization?.split(' ')[1];
   
   if (!token) {
-    return res.status(401).json({ error: 'Authentication required' });
+    // For SSE, send proper response and close
+    res.status(401).set({
+      'Content-Type': 'text/plain'
+    }).send('Authentication required');
+    return;
   }
 
   try {
@@ -32,7 +36,11 @@ const authenticateSSE = (req, res, next) => {
     req.user = decoded;
     next();
   } catch (error) {
-    return res.status(403).json({ error: 'Invalid token' });
+    // For SSE, send proper response and close
+    res.status(403).set({
+      'Content-Type': 'text/plain'
+    }).send('Invalid token');
+    return;
   }
 };
 

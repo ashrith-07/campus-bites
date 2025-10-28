@@ -217,7 +217,11 @@ const connectToOrderStream = (req, res) => {
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
   res.setHeader('Access-Control-Allow-Origin', process.env.FRONTEND_URL || 'http://localhost:3000');
-  res.setHeader('X-Accel-Buffering', 'no'); // Disable buffering for nginx
+  res.setHeader('Access-Control-Allow-Credentials', 'true'); // Add this if needed
+  res.setHeader('X-Accel-Buffering', 'no');
+  
+  // IMPORTANT: Flush headers to establish connection immediately
+  res.flushHeaders();
   
   // Send initial message
   res.write(`data: ${JSON.stringify({ message: "Connected to Campus Bites order stream." })}\n\n`);
@@ -228,7 +232,12 @@ const connectToOrderStream = (req, res) => {
 
   // Heartbeat every 30 seconds
   const heartbeat = setInterval(() => {
-    res.write(`: heartbeat\n\n`);
+    try {
+      res.write(`: heartbeat\n\n`);
+    } catch (error) {
+      console.error('Error sending heartbeat:', error);
+      clearInterval(heartbeat);
+    }
   }, 30000);
 
   // Cleanup
@@ -236,7 +245,13 @@ const connectToOrderStream = (req, res) => {
     clearInterval(heartbeat);
     clients.delete(customerId);
     console.log(`SSE connection closed for user ${customerId}`);
-    res.end();
+  });
+  
+  // Handle errors
+  req.on('error', (error) => {
+    console.error('SSE connection error:', error);
+    clearInterval(heartbeat);
+    clients.delete(customerId);
   });
 };
 
