@@ -26,24 +26,19 @@ const fetchMenuItems = async () => {
   try {
     setLoading(true);
     const data = await api.getMenuItems();
-    
-    // Log the first item to see the structure
-    console.log('Raw API data (first item):', data[0]);
 
     const formatted = data.map(item => {
       let imageUrl;
       
-      if (!item.image) {
+      if (!item.imageUrl) {
         imageUrl = null;
-      } else if (item.image.startsWith('http')) {
-        imageUrl = item.image;
+      } else if (item.imageUrl.startsWith('http')) {
+        imageUrl = item.imageUrl;
       } else {
         const baseUrl = (process.env.NEXT_PUBLIC_API_URL?.replace('/api', '')) || 'https://campus-bites-server.vercel.app';
-        const imagePath = item.image.startsWith('/') ? item.image : `/${item.image}`;
+        const imagePath = item.imageUrl.startsWith('/') ? item.imageUrl : `/${item.imageUrl}`;
         imageUrl = `${baseUrl}${imagePath}`;
       }
-      
-      console.log('Item:', item.name, 'Image URL:', imageUrl);
       
       return {
         ...item,
@@ -59,7 +54,6 @@ const fetchMenuItems = async () => {
     setLoading(false);
   }
 };
-
   useEffect(() => {
     // Check store status
     const savedStatus = localStorage.getItem('storeOpen');
