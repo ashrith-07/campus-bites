@@ -40,7 +40,7 @@ function HomeContent() {
         ...item,
         image: item.image?.startsWith('http')
           ? item.image
-          : `${process.env.NEXT_PUBLIC_API_URL || 'https://campus-bites-server.vercel.app/api'}${item.image}`,
+          : `${process.env.NEXT_PUBLIC_API_URL || 'https://campus-bites-server.vercel.app'}${item.image}`,
       }));
       setMenuItems(formatted);
     } catch (err) {
