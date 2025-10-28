@@ -1,4 +1,6 @@
 'use client';
+
+import { Suspense } from 'react';
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Navbar from '@/components/ui/Navbar';
@@ -6,9 +8,8 @@ import MenuCard from '@/components/ui/MenuCard';
 import CartSidebar from '@/components/ui/CartSidebar';
 import { api } from '@/lib/api';
 
-const categories = ['All', 'Pizza', 'Rolls', 'Beverages', 'Desserts', 'Sandwiches', 'Snacks'];
-
-export default function HomePage() {
+function HomeContent() {
+  const categories = ['All', 'Pizza', 'Rolls', 'Beverages', 'Desserts', 'Sandwiches', 'Snacks'];
   const searchParams = useSearchParams();
   const searchQuery = searchParams.get('search') || '';
   
@@ -116,5 +117,17 @@ export default function HomePage() {
       {/* Cart Sidebar */}
       <CartSidebar/>
     </div>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-secondary border-t-transparent mx-auto"></div>
+      </div>
+    }>
+      <HomeContent />
+    </Suspense>
   );
 }
