@@ -36,7 +36,13 @@ function HomeContent() {
     try {
       setLoading(true);
       const data = await api.getMenuItems();
-      setMenuItems(data);
+      const formatted = data.map(item => ({
+        ...item,
+        image: item.image?.startsWith('http')
+          ? item.image
+          : `${process.env.NEXT_PUBLIC_API_URL || 'https://campus-bites-server.vercel.app/api'}${item.image}`,
+      }));
+      setMenuItems(formatted);
     } catch (err) {
       setError('Failed to load menu items');
       console.error(err);
