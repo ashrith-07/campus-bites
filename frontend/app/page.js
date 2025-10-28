@@ -18,22 +18,23 @@ function HomeContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+
   useEffect(() => {
+    const fetchMenuItems = async () => {
+      try {
+        setLoading(true);
+        const data = await api.getMenuItems();
+        setMenuItems(data);
+      } catch (err) {
+        setError('Failed to load menu items');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
     fetchMenuItems();
   }, []);
 
-  const fetchMenuItems = async () => {
-    try {
-      setLoading(true);
-      const data = await api.getMenuItems();
-      setMenuItems(data);
-    } catch (err) {
-      setError('Failed to load menu items');
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // Filter by category and search query
   const filteredItems = menuItems.filter(item => {
