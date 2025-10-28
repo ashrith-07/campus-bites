@@ -22,27 +22,34 @@ function HomeContent() {
   const [error, setError] = useState(null);
   const [storeOpen, setStoreOpen] = useState(true);
 
-  useEffect(() => {
-    // Check store status
-    const savedStatus = localStorage.getItem('storeOpen');
-    if (savedStatus !== null) {
-      setStoreOpen(JSON.parse(savedStatus));
-    }
-
-    fetchMenuItems();
-  }, []);
-
-  const fetchMenuItems = async () => {
+const fetchMenuItems = async () => {
   try {
     setLoading(true);
     const data = await api.getMenuItems();
+    
+    // Log the first item to see the structure
+    console.log('Raw API data (first item):', data[0]);
 
-    const formatted = data.map(item => ({
-      ...item,
-      imageUrl: item.image?.startsWith('http')
-        ? item.image
-        : `${(process.env.NEXT_PUBLIC_API_URL?.replace('/api', '')) || 'https://campus-bites-server.vercel.app'}${item.image}`,
-    }));
+    const formatted = data.map(item => {
+      let imageUrl;
+      
+      if (!item.image) {
+        imageUrl = null;
+      } else if (item.image.startsWith('http')) {
+        imageUrl = item.image;
+      } else {
+        const baseUrl = (process.env.NEXT_PUBLIC_API_URL?.replace('/api', '')) || 'https://campus-bites-server.vercel.app';
+        const imagePath = item.image.startsWith('/') ? item.image : `/${item.image}`;
+        imageUrl = `${baseUrl}${imagePath}`;
+      }
+      
+      console.log('Item:', item.name, 'Image URL:', imageUrl);
+      
+      return {
+        ...item,
+        imageUrl,
+      };
+    });
 
     setMenuItems(formatted);
   } catch (err) {
@@ -52,6 +59,16 @@ function HomeContent() {
     setLoading(false);
   }
 };
+
+  useEffect(() => {
+    // Check store status
+    const savedStatus = localStorage.getItem('storeOpen');
+    if (savedStatus !== null) {
+      setStoreOpen(JSON.parse(savedStatus));
+    }
+
+    fetchMenuItems();
+  }, []);
 
 
   // If store is closed and user is not a vendor, show closed page

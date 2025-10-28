@@ -1,10 +1,12 @@
 'use client';
 import { useCart } from '@/contexts/CartContext';
-import { Star, Clock, Plus } from 'lucide-react';
-import Image from 'next/image';
+import { Star, Clock, Plus, ImageOff } from 'lucide-react';
+import { useState } from 'react';
 
 export default function MenuCard({ item }) {
   const { addToCart } = useCart();
+  const [imageError, setImageError] = useState(false);
+  const [imageLoading, setImageLoading] = useState(true);
 
   const handleAddToCart = () => {
     addToCart(item);
@@ -13,17 +15,37 @@ export default function MenuCard({ item }) {
   return (
     <div className="bg-card rounded-xl sm:rounded-2xl overflow-hidden shadow-elegant border border-border hover:shadow-elegant-lg transition-all duration-300 hover:-translate-y-1">
       {/* Image */}
-      <div className="relative h-40 sm:h-48 overflow-hidden bg-muted">
-        <Image 
-          src={item.imageUrl} 
-          alt={item.name}
-          fill
-          className="object-cover"
-          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
-          onError={(e) => {
-            e.target.src = '/placeholder-food.jpg'; // Add a placeholder image
-          }}
-        />
+      <div className="relative h-40 sm:h-48 overflow-hidden bg-muted flex items-center justify-center">
+        {!imageError && item.imageUrl ? (
+          <>
+            {imageLoading && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-4 border-secondary border-t-transparent"></div>
+              </div>
+            )}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img 
+              src={item.imageUrl} 
+              alt={item.name}
+              className={`w-full h-full object-cover transition-opacity duration-300 ${imageLoading ? 'opacity-0' : 'opacity-100'}`}
+              onError={(e) => {
+                console.error('Image failed to load:', item.imageUrl);
+                console.error('Status:', e.target.naturalWidth === 0 ? 'Failed' : 'Loaded');
+                setImageError(true);
+                setImageLoading(false);
+              }}
+              onLoad={() => {
+                console.log('Image loaded successfully:', item.imageUrl);
+                setImageLoading(false);
+              }}
+            />
+          </>
+        ) : (
+          <div className="flex flex-col items-center justify-center text-muted-foreground">
+            <ImageOff className="w-12 h-12 mb-2" />
+            <span className="text-sm">No image</span>
+          </div>
+        )}
         {item.popular && (
           <span className="absolute top-2 sm:top-3 right-2 sm:right-3 bg-secondary text-secondary-foreground text-xs font-bold px-2 sm:px-3 py-1 rounded-full z-10">
             Popular
