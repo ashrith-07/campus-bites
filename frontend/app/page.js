@@ -33,23 +33,26 @@ function HomeContent() {
   }, []);
 
   const fetchMenuItems = async () => {
-    try {
-      setLoading(true);
-      const data = await api.getMenuItems();
-      const formatted = data.map(item => ({
-        ...item,
-        image: item.image?.startsWith('http')
-          ? item.image
-          : `${(process.env.NEXT_PUBLIC_API_URL?.replace('/api', '')) || 'https://campus-bites-server.vercel.app'}${item.image}`,
-      }));
-      setMenuItems(formatted);
-    } catch (err) {
-      setError('Failed to load menu items');
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  try {
+    setLoading(true);
+    const data = await api.getMenuItems();
+
+    const formatted = data.map(item => ({
+      ...item,
+      imageUrl: item.image?.startsWith('http')
+        ? item.image
+        : `${(process.env.NEXT_PUBLIC_API_URL?.replace('/api', '')) || 'https://campus-bites-server.vercel.app'}${item.image}`,
+    }));
+
+    setMenuItems(formatted);
+  } catch (err) {
+    setError('Failed to load menu items');
+    console.error(err);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   // If store is closed and user is not a vendor, show closed page
   if (!storeOpen && user?.role !== 'VENDOR') {
