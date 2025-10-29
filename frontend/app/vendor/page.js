@@ -19,7 +19,6 @@ export default function VendorDashboard() {
     }
   }, []);
 
-  // ✅ Toggle and persist store status
   const toggleStoreStatus = () => {
     const newStatus = !storeOpen;
     setStoreOpen(newStatus);
