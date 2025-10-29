@@ -271,6 +271,7 @@ function OrdersManagement({ token }) {
 }
 
 // Menu Management Component
+// Menu Management Component - FIXED VERSION
 function MenuManagement({ token }) {
   const [menuItems, setMenuItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -282,10 +283,12 @@ function MenuManagement({ token }) {
     price: '',
     category: 'Pizza',
     imageUrl: '',
-    // stock: 0,
     isAvailable: true,
     popular: false
   });
+
+  // ✅ Use environment variable or fallback to Vercel URL
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://campus-bites-server.vercel.app/api';
 
   useEffect(() => {
     fetchMenuItems();
@@ -293,7 +296,7 @@ function MenuManagement({ token }) {
 
   const fetchMenuItems = async () => {
     try {
-      const response = await fetch('https://campus-bites-server.vercel.app/api/menu/items');
+      const response = await fetch(`${API_URL}/menu/items`);
       const data = await response.json();
       setMenuItems(data);
     } catch (error) {
@@ -304,40 +307,52 @@ function MenuManagement({ token }) {
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  
-  try {
-    const url = editingItem 
-      ? `http://localhost:3001/api/menu/items/${editingItem.id}`
-      : 'http://localhost:3001/api/menu/items';
+    e.preventDefault();
     
-    const method = editingItem ? 'PUT' : 'POST';
+    try {
+      // ✅ FIXED: Use API_URL instead of localhost
+      const url = editingItem 
+        ? `${API_URL}/menu/items/${editingItem.id}`
+        : `${API_URL}/menu/items`;
+      
+      const method = editingItem ? 'PUT' : 'POST';
 
-    const response = await fetch(url, {
-      method,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({
-        ...formData,
-        price: parseFloat(formData.price),
-        stock: 100 // Default stock
-      })
-    });
+      console.log('Submitting to:', url);
+      console.log('Method:', method);
+      console.log('Data:', formData);
 
-    if (response.ok) {
-      alert(editingItem ? 'Item updated successfully!' : 'Item created successfully!');
-      setShowModal(false);
-      setEditingItem(null);
-      resetForm();
-      fetchMenuItems();
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          ...formData,
+          price: parseFloat(formData.price),
+          stock: 100 // Default stock
+        })
+      });
+
+      console.log('Response status:', response.status);
+
+      if (response.ok) {
+        alert(editingItem ? 'Item updated successfully!' : 'Item created successfully!');
+        setShowModal(false);
+        setEditingItem(null);
+        resetForm();
+        fetchMenuItems();
+      } else {
+        // ✅ Show detailed error message
+        const errorData = await response.json();
+        console.error('Error response:', errorData);
+        alert(`Failed to save item: ${errorData.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error saving menu item:', error);
+      alert(`Failed to save item: ${error.message}`);
     }
-  } catch (error) {
-    console.error('Error saving menu item:', error);
-    alert('Failed to save item');
-  }
-};
+  };
 
   const handleEdit = (item) => {
     setEditingItem(item);
@@ -347,7 +362,6 @@ function MenuManagement({ token }) {
       price: item.price.toString(),
       category: item.category,
       imageUrl: item.imageUrl || '',
-      stock: item.stock,
       isAvailable: item.isAvailable,
       popular: item.popular
     });
@@ -358,7 +372,7 @@ function MenuManagement({ token }) {
     if (!confirm('Are you sure you want to delete this item?')) return;
 
     try {
-      const response = await fetch(`https://campus-bites-server.vercel.app/api/menu/items/${id}`, {
+      const response = await fetch(`${API_URL}/menu/items/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -369,11 +383,12 @@ function MenuManagement({ token }) {
         alert('Item deleted successfully!');
         fetchMenuItems();
       } else {
-        alert('Failed to delete item');
+        const errorData = await response.json();
+        alert(`Failed to delete item: ${errorData.error || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Error deleting menu item:', error);
-      alert('Failed to delete item');
+      alert(`Failed to delete item: ${error.message}`);
     }
   };
 
@@ -384,7 +399,6 @@ function MenuManagement({ token }) {
       price: '',
       category: 'Pizza',
       imageUrl: '',
-      stock: 0,
       isAvailable: true,
       popular: false
     });
@@ -519,19 +533,9 @@ function MenuManagement({ token }) {
                   value={formData.imageUrl}
                   onChange={(e) => setFormData({...formData, imageUrl: e.target.value})}
                   className="w-full px-4 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-secondary"
+                  placeholder="https://example.com/image.jpg"
                 />
               </div>
-
-              {/* <div>
-                <label className="block text-sm font-semibold mb-1">Stock</label>
-                <input
-                  type="number"
-                  value={formData.stock}
-                  onChange={(e) => setFormData({...formData, stock: parseInt(e.target.value)})}
-                  className="w-full px-4 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-secondary"
-                  required
-                />
-              </div> */}
 
               <div className="flex items-center gap-4">
                 <label className="flex items-center gap-2">
