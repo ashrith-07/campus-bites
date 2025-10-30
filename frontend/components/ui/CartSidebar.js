@@ -58,7 +58,7 @@ export default function CartSidebar() {
               {cart.map((item) => (
                 <div key={item.id} className="bg-muted rounded-xl p-4 border border-border">
                   <div className="flex items-start gap-3 mb-3">
-                    <div className="text-3xl">{item.imageUrl || '🍽️'}</div>
+                    <div className="text-3xl">{'🍽️'}</div>
                     <div className="flex-1">
                       <h4 className="font-semibold text-card-foreground">{item.name}</h4>
                       <p className="text-sm text-muted-foreground">₹{parseFloat(item.price).toFixed(0)}</p>
