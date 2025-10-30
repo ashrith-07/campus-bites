@@ -163,11 +163,11 @@ export default function VendorDashboard() {
     </div>
   );
 }
-
 // ========================= Orders Management =========================
 function OrdersManagement({ token }) {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [expandedOrder, setExpandedOrder] = useState(null); // Track which order is expanded
 
   useEffect(() => {
     fetchOrders();
@@ -208,6 +208,10 @@ function OrdersManagement({ token }) {
     }
   };
 
+  const toggleOrderDetails = (orderId) => {
+    setExpandedOrder(expandedOrder === orderId ? null : orderId);
+  };
+
   if (loading) {
     return (
       <div className="text-center py-12">
@@ -228,28 +232,50 @@ function OrdersManagement({ token }) {
             <p className="text-muted-foreground">No orders yet</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="text-left py-3 px-4 font-semibold text-foreground">Order ID</th>
-                  <th className="text-left py-3 px-4 font-semibold text-foreground">Customer</th>
-                  <th className="text-left py-3 px-4 font-semibold text-foreground">Items</th>
-                  <th className="text-left py-3 px-4 font-semibold text-foreground">Total</th>
-                  <th className="text-left py-3 px-4 font-semibold text-foreground">Status</th>
-                  <th className="text-left py-3 px-4 font-semibold text-foreground">Date</th>
-                  <th className="text-left py-3 px-4 font-semibold text-foreground">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {orders.map((order) => (
-                  <tr key={order.id} className="border-b border-border hover:bg-muted transition">
-                    <td className="py-3 px-4">#{order.id}</td>
-                    <td className="py-3 px-4">{order.user?.name || order.user?.email}</td>
-                    <td className="py-3 px-4">{order.items?.length || 0} items</td>
-                    <td className="py-3 px-4 font-semibold">₹{parseFloat(order.total).toFixed(2)}</td>
-                    <td className="py-3 px-4">
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+          <div className="space-y-4">
+            {orders.map((order) => (
+              <div key={order.id} className="border border-border rounded-xl overflow-hidden">
+                {/* Order Header */}
+                <div className="bg-muted/50 p-4">
+                  <div className="grid grid-cols-1 md:grid-cols-7 gap-4 items-center">
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Order ID</p>
+                      <p className="font-bold">#{order.id}</p>
+                    </div>
+                    
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Customer</p>
+                      <p className="font-medium">{order.user?.name || order.user?.email}</p>
+                    </div>
+                    
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Items</p>
+                      <button
+                        onClick={() => toggleOrderDetails(order.id)}
+                        className="font-medium text-secondary hover:underline flex items-center gap-1"
+                      >
+                        {order.items?.length || 0} items
+                        <svg
+                          className={`w-4 h-4 transition-transform ${
+                            expandedOrder === order.id ? 'rotate-180' : ''
+                          }`}
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+                    </div>
+                    
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Total</p>
+                      <p className="font-bold text-secondary">₹{parseFloat(order.total).toFixed(2)}</p>
+                    </div>
+                    
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Status</p>
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold inline-block ${
                         order.status === 'COMPLETED' ? 'bg-success/10 text-success' :
                         order.status === 'READY' ? 'bg-blue-500/10 text-blue-600' :
                         order.status === 'PROCESSING' ? 'bg-yellow-500/10 text-yellow-600' :
@@ -258,15 +284,20 @@ function OrdersManagement({ token }) {
                       }`}>
                         {order.status}
                       </span>
-                    </td>
-                    <td className="py-3 px-4 text-sm text-muted-foreground">
-                      {new Date(order.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="py-3 px-4">
+                    </div>
+                    
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Date</p>
+                      <p className="text-sm">{new Date(order.createdAt).toLocaleDateString()}</p>
+                      <p className="text-xs text-muted-foreground">{new Date(order.createdAt).toLocaleTimeString()}</p>
+                    </div>
+                    
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Update Status</p>
                       <select
                         value={order.status}
                         onChange={(e) => updateOrderStatus(order.id, e.target.value)}
-                        className="px-3 py-1 border border-border rounded-lg bg-card text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-secondary"
+                        className="w-full px-2 py-1 border border-border rounded-lg bg-card text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-secondary"
                       >
                         <option value="PENDING">Pending</option>
                         <option value="PROCESSING">Processing</option>
@@ -274,11 +305,75 @@ function OrdersManagement({ token }) {
                         <option value="COMPLETED">Completed</option>
                         <option value="CANCELLED">Cancelled</option>
                       </select>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Expandable Order Items */}
+                {expandedOrder === order.id && (
+                  <div className="p-4 bg-card border-t border-border">
+                    <h4 className="font-semibold mb-3 text-foreground">Order Items:</h4>
+                    <div className="space-y-2">
+                      {order.items && order.items.length > 0 ? (
+                        order.items.map((item, index) => (
+                          <div
+                            key={index}
+                            className="flex items-center justify-between p-3 bg-muted/30 rounded-lg"
+                          >
+                            <div className="flex items-center gap-3 flex-1">
+                              {item.menuItem?.imageUrl && (
+                                <img
+                                  src={item.menuItem.imageUrl}
+                                  alt={item.menuItem.name}
+                                  className="w-12 h-12 rounded-lg object-cover"
+                                />
+                              )}
+                              <div>
+                                <p className="font-medium text-foreground">
+                                  {item.menuItem?.name || 'Unknown Item'}
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                  {item.menuItem?.category}
+                                </p>
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center gap-4">
+                              <div className="text-right">
+                                <p className="text-sm text-muted-foreground">Quantity</p>
+                                <p className="font-semibold">{item.quantity}x</p>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-sm text-muted-foreground">Price</p>
+                                <p className="font-semibold text-secondary">
+                                  ₹{parseFloat(item.price || item.menuItem?.price || 0).toFixed(2)}
+                                </p>
+                              </div>
+                              <div className="text-right min-w-[80px]">
+                                <p className="text-sm text-muted-foreground">Subtotal</p>
+                                <p className="font-bold text-foreground">
+                                  ₹{(parseFloat(item.price || item.menuItem?.price || 0) * item.quantity).toFixed(2)}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-muted-foreground text-center py-4">No items found</p>
+                      )}
+                    </div>
+                    
+                    {/* Order Summary */}
+                    <div className="mt-4 pt-4 border-t border-border">
+                      <div className="flex justify-between items-center">
+                        <p className="font-semibold text-foreground">Order Total:</p>
+                        <p className="text-2xl font-bold text-secondary">₹{parseFloat(order.total).toFixed(2)}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         )}
       </div>
