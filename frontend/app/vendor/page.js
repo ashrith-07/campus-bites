@@ -387,6 +387,9 @@ function MenuManagement({ token }) {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -415,15 +418,104 @@ function MenuManagement({ token }) {
     }
   };
 
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        alert('Please select an image file');
+        return;
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Image size should be less than 5MB');
+        return;
+      }
+
+      setImageFile(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+    setFormData({ ...formData, imageUrl: '' });
+  };
+
+  const uploadImage = async () => {
+    if (!imageFile) return null;
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('image', imageFile);
+
+      const response = await fetch(`${API_URL}/upload/image`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      if (!response.ok) {
+        throw new Error('Image upload failed');
+      }
+
+      const data = await response.json();
+      return data.imageUrl || data.url;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      alert('Failed to upload image. Proceeding without image.');
+      return null;
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
     try {
+      setUploading(true);
+
+      // Upload image if a new file is selected
+      let imageUrl = formData.imageUrl;
+      if (imageFile) {
+        const uploadedUrl = await uploadImage();
+        if (uploadedUrl) {
+          imageUrl = uploadedUrl;
+        }
+      }
+
       const url = editingItem 
         ? `${API_URL}/menu/items/${editingItem.id}`
         : `${API_URL}/menu/items`;
       
       const method = editingItem ? 'PUT' : 'POST';
+
+      const payload = {
+        name: formData.name,
+        description: formData.description,
+        price: parseFloat(formData.price),
+        category: formData.category,
+        isAvailable: formData.isAvailable,
+        popular: formData.popular,
+        stock: 100
+      };
+
+      // Only include imageUrl if it exists
+      if (imageUrl) {
+        payload.imageUrl = imageUrl;
+      }
 
       const response = await fetch(url, {
         method,
@@ -431,11 +523,7 @@ function MenuManagement({ token }) {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({
-          ...formData,
-          price: parseFloat(formData.price),
-          stock: 100
-        })
+        body: JSON.stringify(payload)
       });
 
       if (response.ok) {
@@ -451,6 +539,8 @@ function MenuManagement({ token }) {
     } catch (error) {
       console.error('Error saving menu item:', error);
       alert(`Failed to save item: ${error.message}`);
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -465,6 +555,12 @@ function MenuManagement({ token }) {
       isAvailable: item.isAvailable,
       popular: item.popular
     });
+    
+    // Set preview to existing image
+    if (item.imageUrl) {
+      setImagePreview(item.imageUrl);
+    }
+    
     setShowModal(true);
   };
 
@@ -502,6 +598,8 @@ function MenuManagement({ token }) {
       isAvailable: true,
       popular: false
     });
+    setImageFile(null);
+    setImagePreview(null);
   };
 
   if (loading) {
@@ -535,11 +633,17 @@ function MenuManagement({ token }) {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {menuItems.map((item) => (
             <div key={item.id} className="border border-border rounded-xl p-4">
-              <img 
-                src={item.imageUrl} 
-                alt={item.name}
-                className="w-full h-32 object-cover rounded-lg mb-3"
-              />
+              {item.imageUrl ? (
+                <img 
+                  src={item.imageUrl} 
+                  alt={item.name}
+                  className="w-full h-32 object-cover rounded-lg mb-3"
+                />
+              ) : (
+                <div className="w-full h-32 bg-muted rounded-lg mb-3 flex items-center justify-center">
+                  <span className="text-4xl">🍽️</span>
+                </div>
+              )}
               <h3 className="font-bold text-lg mb-1">{item.name}</h3>
               <p className="text-sm text-muted-foreground mb-2 line-clamp-2">{item.description}</p>
               <div className="flex items-center justify-between mb-3">
@@ -578,7 +682,7 @@ function MenuManagement({ token }) {
             </h3>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold mb-1">Name</label>
+                <label className="block text-sm font-semibold mb-1">Name *</label>
                 <input
                   type="text"
                   value={formData.name}
@@ -595,11 +699,12 @@ function MenuManagement({ token }) {
                   onChange={(e) => setFormData({...formData, description: e.target.value})}
                   className="w-full px-4 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-secondary"
                   rows="3"
+                  placeholder="Optional"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold mb-1">Price (₹)</label>
+                <label className="block text-sm font-semibold mb-1">Price (₹) *</label>
                 <input
                   type="number"
                   step="0.01"
@@ -611,7 +716,7 @@ function MenuManagement({ token }) {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold mb-1">Category</label>
+                <label className="block text-sm font-semibold mb-1">Category *</label>
                 <select
                   value={formData.category}
                   onChange={(e) => setFormData({...formData, category: e.target.value})}
@@ -626,15 +731,50 @@ function MenuManagement({ token }) {
                 </select>
               </div>
 
+              {/* Image Upload Section */}
               <div>
-                <label className="block text-sm font-semibold mb-1">Image URL</label>
-                <input
-                  type="url"
-                  value={formData.imageUrl}
-                  onChange={(e) => setFormData({...formData, imageUrl: e.target.value})}
-                  className="w-full px-4 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-secondary"
-                  placeholder="https://example.com/image.jpg"
-                />
+                <label className="block text-sm font-semibold mb-2">
+                  Item Image <span className="text-muted-foreground font-normal">(Optional)</span>
+                </label>
+                
+                {imagePreview ? (
+                  <div className="relative">
+                    <img 
+                      src={imagePreview} 
+                      alt="Preview" 
+                      className="w-full h-48 object-cover rounded-lg border border-border"
+                    />
+                    <button
+                      type="button"
+                      onClick={removeImage}
+                      className="absolute top-2 right-2 bg-destructive text-destructive-foreground p-2 rounded-full hover:opacity-90 transition"
+                      title="Remove image"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-secondary transition cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="hidden"
+                      id="image-upload"
+                    />
+                    <label htmlFor="image-upload" className="cursor-pointer">
+                      <div className="flex flex-col items-center gap-2">
+                        <svg className="w-12 h-12 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <p className="text-sm font-semibold text-foreground">Click to upload image</p>
+                        <p className="text-xs text-muted-foreground">PNG, JPG, GIF up to 5MB</p>
+                      </div>
+                    </label>
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center gap-4">
@@ -668,14 +808,26 @@ function MenuManagement({ token }) {
                     resetForm();
                   }}
                   className="flex-1 bg-muted text-foreground py-2 rounded-lg font-semibold hover:bg-border transition"
+                  disabled={uploading}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 bg-secondary text-secondary-foreground py-2 rounded-lg font-semibold hover:opacity-90 transition"
+                  className="flex-1 bg-secondary text-secondary-foreground py-2 rounded-lg font-semibold hover:opacity-90 transition disabled:opacity-50"
+                  disabled={uploading}
                 >
-                  {editingItem ? 'Update' : 'Create'}
+                  {uploading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Uploading...
+                    </span>
+                  ) : (
+                    editingItem ? 'Update' : 'Create'
+                  )}
                 </button>
               </div>
             </form>
@@ -685,7 +837,6 @@ function MenuManagement({ token }) {
     </div>
   );
 }
-
 // ========================= Status Overview =========================
 function StatusOverview({ token }) {
   const [stats, setStats] = useState({
