@@ -10,6 +10,7 @@ export function SSEProvider({ children }) {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [orderUpdates, setOrderUpdates] = useState({});
+  const [storeStatus, setStoreStatus] = useState(true); // ⭐ Added store status
   const eventSourceRef = useRef(null);
   const reconnectTimeoutRef = useRef(null);
 
@@ -54,9 +55,9 @@ export function SSEProvider({ children }) {
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://campus-bites-server.vercel.app/api';
     // Pass token as query parameter since EventSource doesn't support headers
-    const url = `${apiUrl}/orders/stream?token=${token}`;
+    const url = `${apiUrl}/notifications/stream?token=${token}`;
 
-    console.log('Connecting to SSE...');
+    console.log('Connecting to SSE:', url);
 
     const eventSource = new EventSource(url);
 
@@ -65,8 +66,33 @@ export function SSEProvider({ children }) {
       console.log('✅ SSE connection established');
     };
 
+    // ⭐ Listen for store status updates
+    eventSource.addEventListener('store-status', (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        console.log('🏪 Store status update:', data.isOpen);
+        setStoreStatus(data.isOpen);
+        
+        // Show toast notification for customers
+        if (user?.role !== 'VENDOR') {
+          const message = data.isOpen 
+            ? '🎉 Store is now open! You can place orders.' 
+            : '🔒 Store is now closed. Orders are temporarily unavailable.';
+          
+          showToast({
+            id: Date.now(),
+            message,
+            timestamp: new Date(),
+            type: 'store-status'
+          });
+        }
+      } catch (error) {
+        console.error('Error parsing store status:', error);
+      }
+    });
+
     // Listen for order updates
-    eventSource.addEventListener('order_update', (event) => {
+    eventSource.addEventListener('order-update', (event) => {
       try {
         const data = JSON.parse(event.data);
         console.log('📦 Order update received:', data);
@@ -78,7 +104,8 @@ export function SSEProvider({ children }) {
           status: data.status,
           message: data.message,
           timestamp: new Date(),
-          read: false
+          read: false,
+          type: 'order-update'
         };
 
         setNotifications(prev => [notification, ...prev]);
@@ -100,11 +127,18 @@ export function SSEProvider({ children }) {
       }
     });
 
-    // Handle general messages
+    // Handle general messages (including connection confirmation)
     eventSource.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        console.log('SSE message:', data.message || data);
+        console.log('SSE message:', data);
+        
+        // Handle initial store status
+        if (data.type === 'connected' || data.type === 'store-status') {
+          if (typeof data.isOpen !== 'undefined') {
+            setStoreStatus(data.isOpen);
+          }
+        }
       } catch (error) {
         console.log('SSE heartbeat');
       }
@@ -129,7 +163,7 @@ export function SSEProvider({ children }) {
   };
 
   const showToast = (notification) => {
-    // We'll create a custom event that a Toast component can listen to
+    // Create a custom event that a Toast component can listen to
     const event = new CustomEvent('show-notification', { detail: notification });
     window.dispatchEvent(event);
   };
@@ -155,6 +189,11 @@ export function SSEProvider({ children }) {
     return orderUpdates[orderId] || null;
   };
 
+  // ⭐ Add function to update store status (for vendor)
+  const updateStoreStatus = (newStatus) => {
+    setStoreStatus(newStatus);
+  };
+
   return (
     <SSEContext.Provider
       value={{
@@ -164,7 +203,9 @@ export function SSEProvider({ children }) {
         markAllAsRead,
         clearNotifications,
         getOrderUpdate,
-        orderUpdates
+        orderUpdates,
+        storeStatus,        // ⭐ Export store status
+        updateStoreStatus   // ⭐ Export update function
       }}
     >
       {children}

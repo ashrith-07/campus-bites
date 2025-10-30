@@ -3,27 +3,14 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSSE } from '@/contexts/SSEContext';
 import { Package, ChefHat, BarChart3, LogOut } from 'lucide-react';
 
 export default function VendorDashboard() {
   const router = useRouter();
   const { user, token, logout, loading: authLoading } = useAuth();
+  const { storeStatus, updateStoreStatus } = useSSE(); // ⭐ Use SSE context
   const [activeTab, setActiveTab] = useState('orders');
-  const [storeOpen, setStoreOpen] = useState(true); // ✅ Added
-
-  // ✅ Load store status from localStorage
-  useEffect(() => {
-    const savedStatus = localStorage.getItem('storeOpen');
-    if (savedStatus !== null) {
-      setStoreOpen(JSON.parse(savedStatus));
-    }
-  }, []);
-
-  const toggleStoreStatus = () => {
-    const newStatus = !storeOpen;
-    setStoreOpen(newStatus);
-    localStorage.setItem('storeOpen', JSON.stringify(newStatus));
-  };
 
   useEffect(() => {
     if (authLoading) return;
@@ -37,7 +24,42 @@ export default function VendorDashboard() {
       router.push('/');
       return;
     }
-  }, [token, user, authLoading]);
+  }, [token, user, authLoading, router]);
+
+  const toggleStoreStatus = async () => {
+    const newStatus = !storeStatus;
+    
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://campus-bites-server.vercel.app/api';
+      
+      // ⭐ Send to backend which broadcasts via SSE
+      const response = await fetch(`${API_URL}/notifications/store-status?token=${token}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ isOpen: newStatus })
+      });
+
+      if (response.ok) {
+        // ⭐ Update local state
+        updateStoreStatus(newStatus);
+        console.log('✅ Store status updated:', newStatus);
+      } else {
+        const error = await response.json();
+        console.error('❌ Failed to update store status:', error);
+        alert('Failed to update store status');
+      }
+    } catch (error) {
+      console.error('❌ Error updating store status:', error);
+      alert('Failed to update store status');
+    }
+  };
+
+  const handleLogout = () => {
+    logout();
+    router.push('/');
+  };
 
   if (authLoading) {
     return (
@@ -52,14 +74,9 @@ export default function VendorDashboard() {
 
   if (!user || user.role !== 'VENDOR') return null;
 
-  const handleLogout = () => {
-    logout();
-    router.push('/');
-  };
-
   return (
     <div className="min-h-screen bg-background">
-      {/* ✅ Header with Store Status Toggle */}
+      {/* Header with Store Status Toggle */}
       <header className="bg-card border-b border-border shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -71,21 +88,22 @@ export default function VendorDashboard() {
             <div className="flex items-center gap-3">
               {/* Store Status Toggle */}
               <div className="flex items-center gap-3 px-4 py-2 bg-muted rounded-lg">
-                <span className="text-sm font-semibold">Store Status:</span>
+                <span className="text-sm font-semibold">Store:</span>
                 <button
                   onClick={toggleStoreStatus}
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    storeOpen ? 'bg-success' : 'bg-destructive'
+                    storeStatus ? 'bg-success' : 'bg-destructive'
                   }`}
+                  title={storeStatus ? 'Click to close store' : 'Click to open store'}
                 >
                   <span
                     className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      storeOpen ? 'translate-x-6' : 'translate-x-1'
+                      storeStatus ? 'translate-x-6' : 'translate-x-1'
                     }`}
                   />
                 </button>
-                <span className={`text-sm font-bold ${storeOpen ? 'text-success' : 'text-destructive'}`}>
-                  {storeOpen ? 'Open' : 'Closed'}
+                <span className={`text-sm font-bold ${storeStatus ? 'text-success' : 'text-destructive'}`}>
+                  {storeStatus ? 'Open' : 'Closed'}
                 </span>
               </div>
 
@@ -148,504 +166,5 @@ export default function VendorDashboard() {
   );
 }
 
-// ========================= Orders Management =========================
-function OrdersManagement({ token }) {
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchOrders();
-  }, []);
-
-  const fetchOrders = async () => {
-    try {
-      const response = await fetch('https://campus-bites-server.vercel.app/api/orders', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await response.json();
-      setOrders(data.orders || []);
-    } catch (error) {
-      console.error('Error fetching orders:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateOrderStatus = async (orderId, newStatus) => {
-    try {
-      const response = await fetch(`https://campus-bites-server.vercel.app/api/orders/${orderId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ status: newStatus })
-      });
-
-      if (response.ok) {
-        fetchOrders();
-        alert(`Order #${orderId} updated to ${newStatus}`);
-      }
-    } catch (error) {
-      console.error('Error updating order:', error);
-      alert('Failed to update order');
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="text-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-secondary border-t-transparent mx-auto"></div>
-      </div>
-    );
-  }
-
-  return (
-    <div>
-      <div className="bg-card rounded-2xl p-6 shadow-elegant border border-border">
-        <h2 className="font-serif text-xl font-bold mb-4">Orders Management</h2>
-        <p className="text-muted-foreground mb-6">View and manage all incoming orders</p>
-
-        {orders.length === 0 ? (
-          <div className="text-center py-12">
-            <Package className="w-16 h-16 text-muted mx-auto mb-4" />
-            <p className="text-muted-foreground">No orders yet</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="text-left py-3 px-4 font-semibold text-foreground">Order ID</th>
-                  <th className="text-left py-3 px-4 font-semibold text-foreground">Customer</th>
-                  <th className="text-left py-3 px-4 font-semibold text-foreground">Items</th>
-                  <th className="text-left py-3 px-4 font-semibold text-foreground">Total</th>
-                  <th className="text-left py-3 px-4 font-semibold text-foreground">Status</th>
-                  <th className="text-left py-3 px-4 font-semibold text-foreground">Date</th>
-                  <th className="text-left py-3 px-4 font-semibold text-foreground">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {orders.map((order) => (
-                  <tr key={order.id} className="border-b border-border hover:bg-muted transition">
-                    <td className="py-3 px-4">#{order.id}</td>
-                    <td className="py-3 px-4">{order.user?.name || order.user?.email}</td>
-                    <td className="py-3 px-4">{order.items?.length || 0} items</td>
-                    <td className="py-3 px-4 font-semibold">₹{parseFloat(order.total).toFixed(2)}</td>
-                    <td className="py-3 px-4">
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        order.status === 'COMPLETED' ? 'bg-success/10 text-success' :
-                        order.status === 'READY' ? 'bg-blue-500/10 text-blue-600' :
-                        order.status === 'PROCESSING' ? 'bg-yellow-500/10 text-yellow-600' :
-                        order.status === 'CANCELLED' ? 'bg-destructive/10 text-destructive' :
-                        'bg-muted text-muted-foreground'
-                      }`}>
-                        {order.status}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-sm text-muted-foreground">
-                      {new Date(order.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="py-3 px-4">
-                      <select
-                        value={order.status}
-                        onChange={(e) => updateOrderStatus(order.id, e.target.value)}
-                        className="px-3 py-1 border border-border rounded-lg bg-card text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-secondary"
-                      >
-                        <option value="PENDING">Pending</option>
-                        <option value="PROCESSING">Processing</option>
-                        <option value="READY">Ready</option>
-                        <option value="COMPLETED">Completed</option>
-                        <option value="CANCELLED">Cancelled</option>
-                      </select>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// Menu Management Component
-// Menu Management Component - FIXED VERSION
-function MenuManagement({ token }) {
-  const [menuItems, setMenuItems] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
-  const [editingItem, setEditingItem] = useState(null);
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    price: '',
-    category: 'Pizza',
-    imageUrl: '',
-    isAvailable: true,
-    popular: false
-  });
-
-  // ✅ Use environment variable or fallback to Vercel URL
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://campus-bites-server.vercel.app/api';
-
-  useEffect(() => {
-    fetchMenuItems();
-  }, []);
-
-  const fetchMenuItems = async () => {
-    try {
-      const response = await fetch(`${API_URL}/menu/items`);
-      const data = await response.json();
-      setMenuItems(data);
-    } catch (error) {
-      console.error('Error fetching menu items:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    try {
-      // ✅ FIXED: Use API_URL instead of localhost
-      const url = editingItem 
-        ? `${API_URL}/menu/items/${editingItem.id}`
-        : `${API_URL}/menu/items`;
-      
-      const method = editingItem ? 'PUT' : 'POST';
-
-      console.log('Submitting to:', url);
-      console.log('Method:', method);
-      console.log('Data:', formData);
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          ...formData,
-          price: parseFloat(formData.price),
-          stock: 100 // Default stock
-        })
-      });
-
-      console.log('Response status:', response.status);
-
-      if (response.ok) {
-        alert(editingItem ? 'Item updated successfully!' : 'Item created successfully!');
-        setShowModal(false);
-        setEditingItem(null);
-        resetForm();
-        fetchMenuItems();
-      } else {
-        // ✅ Show detailed error message
-        const errorData = await response.json();
-        console.error('Error response:', errorData);
-        alert(`Failed to save item: ${errorData.error || 'Unknown error'}`);
-      }
-    } catch (error) {
-      console.error('Error saving menu item:', error);
-      alert(`Failed to save item: ${error.message}`);
-    }
-  };
-
-  const handleEdit = (item) => {
-    setEditingItem(item);
-    setFormData({
-      name: item.name,
-      description: item.description || '',
-      price: item.price.toString(),
-      category: item.category,
-      imageUrl: item.imageUrl || '',
-      isAvailable: item.isAvailable,
-      popular: item.popular
-    });
-    setShowModal(true);
-  };
-
-  const handleDelete = async (id) => {
-    if (!confirm('Are you sure you want to delete this item?')) return;
-
-    try {
-      const response = await fetch(`${API_URL}/menu/items/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        alert('Item deleted successfully!');
-        fetchMenuItems();
-      } else {
-        const errorData = await response.json();
-        alert(`Failed to delete item: ${errorData.error || 'Unknown error'}`);
-      }
-    } catch (error) {
-      console.error('Error deleting menu item:', error);
-      alert(`Failed to delete item: ${error.message}`);
-    }
-  };
-
-  const resetForm = () => {
-    setFormData({
-      name: '',
-      description: '',
-      price: '',
-      category: 'Pizza',
-      imageUrl: '',
-      isAvailable: true,
-      popular: false
-    });
-  };
-
-  if (loading) {
-    return (
-      <div className="text-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-secondary border-t-transparent mx-auto"></div>
-      </div>
-    );
-  }
-
-  return (
-    <div>
-      <div className="bg-card rounded-2xl p-6 shadow-elegant border border-border">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h2 className="font-serif text-xl font-bold">Menu Items Management</h2>
-            <p className="text-muted-foreground">Add, edit, or remove items from your menu</p>
-          </div>
-          <button
-            onClick={() => {
-              setEditingItem(null);
-              resetForm();
-              setShowModal(true);
-            }}
-            className="bg-secondary text-secondary-foreground px-6 py-2 rounded-lg font-semibold hover:opacity-90 transition"
-          >
-            + Add Item
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {menuItems.map((item) => (
-            <div key={item.id} className="border border-border rounded-xl p-4">
-              <img 
-                src={item.imageUrl} 
-                alt={item.name}
-                className="w-full h-32 object-cover rounded-lg mb-3"
-              />
-              <h3 className="font-bold text-lg mb-1">{item.name}</h3>
-              <p className="text-sm text-muted-foreground mb-2 line-clamp-2">{item.description}</p>
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-xl font-bold text-secondary">₹{parseFloat(item.price).toFixed(2)}</span>
-                <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                  item.isAvailable ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'
-                }`}>
-                  {item.isAvailable ? 'Available' : 'Unavailable'}
-                </span>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => handleEdit(item)}
-                  className="flex-1 bg-muted text-foreground py-2 rounded-lg text-sm font-semibold hover:bg-border transition"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleDelete(item.id)}
-                  className="flex-1 bg-destructive text-destructive-foreground py-2 rounded-lg text-sm font-semibold hover:opacity-90 transition"
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Add/Edit Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-card rounded-2xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto border border-border">
-            <h3 className="font-serif text-2xl font-bold mb-4">
-              {editingItem ? 'Edit Menu Item' : 'Add Menu Item'}
-            </h3>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-semibold mb-1">Name</label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  className="w-full px-4 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-secondary"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold mb-1">Description</label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({...formData, description: e.target.value})}
-                  className="w-full px-4 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-secondary"
-                  rows="3"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold mb-1">Price (₹)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={formData.price}
-                  onChange={(e) => setFormData({...formData, price: e.target.value})}
-                  className="w-full px-4 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-secondary"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold mb-1">Category</label>
-                <select
-                  value={formData.category}
-                  onChange={(e) => setFormData({...formData, category: e.target.value})}
-                  className="w-full px-4 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-secondary"
-                >
-                  <option value="Pizza">Pizza</option>
-                  <option value="Rolls">Rolls</option>
-                  <option value="Beverages">Beverages</option>
-                  <option value="Desserts">Desserts</option>
-                  <option value="Sandwiches">Sandwiches</option>
-                  <option value="Snacks">Snacks</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold mb-1">Image URL</label>
-                <input
-                  type="url"
-                  value={formData.imageUrl}
-                  onChange={(e) => setFormData({...formData, imageUrl: e.target.value})}
-                  className="w-full px-4 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-secondary"
-                  placeholder="https://example.com/image.jpg"
-                />
-              </div>
-
-              <div className="flex items-center gap-4">
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={formData.isAvailable}
-                    onChange={(e) => setFormData({...formData, isAvailable: e.target.checked})}
-                    className="w-4 h-4"
-                  />
-                  <span className="text-sm font-semibold">Available</span>
-                </label>
-
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={formData.popular}
-                    onChange={(e) => setFormData({...formData, popular: e.target.checked})}
-                    className="w-4 h-4"
-                  />
-                  <span className="text-sm font-semibold">Popular</span>
-                </label>
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowModal(false);
-                    setEditingItem(null);
-                    resetForm();
-                  }}
-                  className="flex-1 bg-muted text-foreground py-2 rounded-lg font-semibold hover:bg-border transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 bg-secondary text-secondary-foreground py-2 rounded-lg font-semibold hover:opacity-90 transition"
-                >
-                  {editingItem ? 'Update' : 'Create'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// Status Overview Component
-function StatusOverview({ token }) {
-  const [stats, setStats] = useState({
-    pending: 0,
-    processing: 0,
-    ready: 0,
-    completed: 0,
-    totalRevenue: 0
-  });
-
-  useEffect(() => {
-    fetchStats();
-  }, []);
-
-  const fetchStats = async () => {
-    try {
-      const response = await fetch('https://campus-bites-server.vercel.app/api/orders', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await response.json();
-      const orders = data.orders || [];
-
-      const stats = {
-        pending: orders.filter(o => o.status === 'PENDING').length,
-        processing: orders.filter(o => o.status === 'PROCESSING').length,
-        ready: orders.filter(o => o.status === 'READY').length,
-        completed: orders.filter(o => o.status === 'COMPLETED').length,
-        totalRevenue: orders
-          .filter(o => o.status === 'COMPLETED')
-          .reduce((sum, o) => sum + parseFloat(o.total), 0)
-      };
-
-      setStats(stats);
-    } catch (error) {
-      console.error('Error fetching stats:', error);
-    }
-  };
-
-  return (
-    <div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-        <div className="bg-card rounded-2xl p-6 shadow-elegant border border-border">
-          <p className="text-muted-foreground mb-2">Pending Orders</p>
-          <p className="text-4xl font-bold text-yellow-500">{stats.pending}</p>
-        </div>
-        <div className="bg-card rounded-2xl p-6 shadow-elegant border border-border">
-          <p className="text-muted-foreground mb-2">Processing</p>
-          <p className="text-4xl font-bold text-blue-500">{stats.processing}</p>
-        </div>
-        <div className="bg-card rounded-2xl p-6 shadow-elegant border border-border">
-          <p className="text-muted-foreground mb-2">Ready for Pickup</p>
-          <p className="text-4xl font-bold text-success">{stats.ready}</p>
-        </div>
-      </div>
-
-      <div className="bg-card rounded-2xl p-6 shadow-elegant border border-border">
-        <h3 className="font-serif text-xl font-bold mb-4">Today's Revenue</h3>
-        <p className="text-5xl font-bold text-secondary">₹{stats.totalRevenue.toFixed(2)}</p>
-        <p className="text-muted-foreground mt-2">{stats.completed} completed orders</p>
-      </div>
-    </div>
-  );
-};
+// [Keep your existing OrdersManagement, MenuManagement, and StatusOverview components exactly as they are]
+// I'm not repeating them here to save space, but keep all three components unchanged

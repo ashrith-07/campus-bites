@@ -2,41 +2,47 @@ const express = require('express');
 const cors = require('cors'); 
 const dotenv = require('dotenv'); 
 
-
 const authRouter = require('./src/routes/auth'); 
 const menuRouter = require('./src/routes/menu');
 const orderRouter = require('./src/routes/orders');
 const userRouter = require('./src/routes/users');
 const uploadRouter = require('./src/routes/upload');
+const { router: notificationRoutes } = require('./src/routes/notifications'); // ⭐ ADD THIS
 
 dotenv.config();
 
 const app = express();
-
 const PORT = process.env.PORT || 3001; 
-
 
 app.use(cors({
     origin: 'https://campus-bites-web.vercel.app', 
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
 }));
 
-
 app.use(express.json()); 
 
-
+// ⭐ API Routes
 app.use('/api/auth', authRouter);
 app.use('/api/menu', menuRouter);
 app.use('/api/orders', orderRouter);
 app.use('/api/users', userRouter);
 app.use('/api/upload', uploadRouter);
+app.use('/api/notifications', notificationRoutes); // ⭐ ADD THIS
 
-
+// ⭐ Enhanced status endpoint
 app.get('/api/status', (req, res) => {
-  res.json({ message: 'Campus Bites API is running smoothly on port 3001!', service: 'Backend' });
+  res.json({ 
+    message: 'Campus Bites API is running smoothly on port 3001!', 
+    service: 'Backend',
+    storeStatus: global.storeStatus !== undefined ? (global.storeStatus ? 'OPEN' : 'CLOSED') : 'OPEN',
+    sseConnections: global.sseClients ? global.sseClients.size : 0,
+    timestamp: new Date().toISOString()
+  });
 });
 
-
 app.listen(PORT, () => {
-  console.log(`Backend server listening on http://localhost:${PORT}`);
+  console.log(`🚀 Backend server listening on http://localhost:${PORT}`);
+  console.log(`📡 SSE endpoint: http://localhost:${PORT}/api/notifications/stream`);
+  console.log(`🏪 Store status: ${global.storeStatus !== undefined ? (global.storeStatus ? 'OPEN' : 'CLOSED') : 'OPEN (default)'}`);
+  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
 });

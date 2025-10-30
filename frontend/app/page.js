@@ -9,73 +9,66 @@ import CartSidebar from '@/components/ui/CartSidebar';
 import StoreClosed from '@/components/ui/StoreClosed';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSSE } from '@/contexts/SSEContext'; // ⭐ Import SSE
 
 function HomeContent() {
   const categories = ['All', 'Pizza', 'Rolls', 'Beverages', 'Desserts', 'Sandwiches', 'Snacks'];
   const searchParams = useSearchParams();
   const searchQuery = searchParams.get('search') || '';
   const { user } = useAuth();
+  const { storeStatus } = useSSE(); // ⭐ Get store status from SSE
 
   const [menuItems, setMenuItems] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [storeOpen, setStoreOpen] = useState(true);
 
-const fetchMenuItems = async () => {
-  try {
-    setLoading(true);
-    const data = await api.getMenuItems();
+  const fetchMenuItems = async () => {
+    try {
+      setLoading(true);
+      const data = await api.getMenuItems();
 
-    const formatted = data.map(item => {
-      let imageUrl = null;
-      let isEmoji = false;
-      
-      if (item.imageUrl) {
-        // Check if it's an emoji (simple check: if it's very short and doesn't start with / or http)
-        const isEmojiCheck = item.imageUrl.length <= 2 && !item.imageUrl.startsWith('/') && !item.imageUrl.startsWith('http');
+      const formatted = data.map(item => {
+        let imageUrl = null;
+        let isEmoji = false;
         
-        if (isEmojiCheck) {
-          isEmoji = true;
-          imageUrl = item.imageUrl; // Keep the emoji
-        } else if (item.imageUrl.startsWith('http')) {
-          imageUrl = item.imageUrl;
-        } else {
-          // Relative path - construct full URL
-          const baseUrl = (process.env.NEXT_PUBLIC_API_URL?.replace('/api', '')) || 'https://campus-bites-server.vercel.app';
-          const imagePath = item.imageUrl.startsWith('/') ? item.imageUrl : `/${item.imageUrl}`;
-          imageUrl = `${baseUrl}${imagePath}`;
+        if (item.imageUrl) {
+          const isEmojiCheck = item.imageUrl.length <= 2 && !item.imageUrl.startsWith('/') && !item.imageUrl.startsWith('http');
+          
+          if (isEmojiCheck) {
+            isEmoji = true;
+            imageUrl = item.imageUrl;
+          } else if (item.imageUrl.startsWith('http')) {
+            imageUrl = item.imageUrl;
+          } else {
+            const baseUrl = (process.env.NEXT_PUBLIC_API_URL?.replace('/api', '')) || 'https://campus-bites-server.vercel.app';
+            const imagePath = item.imageUrl.startsWith('/') ? item.imageUrl : `/${item.imageUrl}`;
+            imageUrl = `${baseUrl}${imagePath}`;
+          }
         }
-      }
-      
-      return {
-        ...item,
-        imageUrl,
-        isEmoji,
-      };
-    });
+        
+        return {
+          ...item,
+          imageUrl,
+          isEmoji,
+        };
+      });
 
-    setMenuItems(formatted);
-  } catch (err) {
-    setError('Failed to load menu items');
-    console.error(err);
-  } finally {
-    setLoading(false);
-  }
-};
-  useEffect(() => {
-    // Check store status
-    const savedStatus = localStorage.getItem('storeOpen');
-    if (savedStatus !== null) {
-      setStoreOpen(JSON.parse(savedStatus));
+      setMenuItems(formatted);
+    } catch (err) {
+      setError('Failed to load menu items');
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
+  };
 
+  useEffect(() => {
     fetchMenuItems();
   }, []);
 
-
-  // If store is closed and user is not a vendor, show closed page
-  if (!storeOpen && user?.role !== 'VENDOR') {
+  // ⭐ If store is closed and user is not a vendor, show closed page
+  if (!storeStatus && user?.role !== 'VENDOR') {
     return <StoreClosed />;
   }
 
