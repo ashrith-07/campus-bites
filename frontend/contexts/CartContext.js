@@ -40,7 +40,17 @@ export function CartProvider({ children }) {
           : cartItem
       ));
     } else {
-      setCart([...cart, { ...item, quantity: 1 }]);
+      // ⭐ Include all item properties including imageUrl and isEmoji
+      setCart([...cart, { 
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        imageUrl: item.imageUrl,      // ⭐ Add this
+        isEmoji: item.isEmoji,         // ⭐ Add this
+        description: item.description, // Optional but helpful
+        category: item.category,       // Optional but helpful
+        quantity: 1 
+      }]);
     }
   };
 

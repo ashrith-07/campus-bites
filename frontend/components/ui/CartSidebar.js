@@ -1,6 +1,6 @@
 'use client';
 import { X, Minus, Plus, ShoppingBag } from 'lucide-react';
-import { useCart}  from '@/contexts/CartContext';
+import { useCart } from '@/contexts/CartContext';
 import { useRouter } from 'next/navigation';
 
 export default function CartSidebar() {
@@ -58,7 +58,23 @@ export default function CartSidebar() {
               {cart.map((item) => (
                 <div key={item.id} className="bg-muted rounded-xl p-4 border border-border">
                   <div className="flex items-start gap-3 mb-3">
-                    <div className="text-3xl">{'🍽️'}</div>
+                    {/* ⭐ Show image if available, otherwise show emoji */}
+                    {item.imageUrl ? (
+                      item.isEmoji ? (
+                        <div className="text-4xl">{item.imageUrl}</div>
+                      ) : (
+                        <img
+                          src={item.imageUrl}
+                          alt={item.name}
+                          className="w-16 h-16 rounded-lg object-cover border border-border"
+                        />
+                      )
+                    ) : (
+                      <div className="w-16 h-16 rounded-lg bg-background border border-border flex items-center justify-center">
+                        <span className="text-3xl">🍽️</span>
+                      </div>
+                    )}
+                    
                     <div className="flex-1">
                       <h4 className="font-semibold text-card-foreground">{item.name}</h4>
                       <p className="text-sm text-muted-foreground">₹{parseFloat(item.price).toFixed(0)}</p>
