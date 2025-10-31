@@ -5,7 +5,7 @@ import { useCart } from '@/contexts/CartContext';
 import { useSSE } from '@/contexts/SSEContext';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 export default function Navbar() {
   const { user } = useAuth();
@@ -15,6 +15,37 @@ export default function Navbar() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // ⭐ Refs for click outside detection
+  const notificationRef = useRef(null);
+  const mobileMenuRef = useRef(null);
+
+  // ⭐ Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+        setShowNotifications(false);
+      }
+      if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target)) {
+        setShowMobileMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // ⭐ Prevent body scroll when mobile menu is open
+  useEffect(() => {
+    if (showMobileMenu) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [showMobileMenu]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -78,6 +109,7 @@ export default function Navbar() {
                   <button 
                     onClick={() => setShowMobileMenu(!showMobileMenu)}
                     className="md:hidden p-2 hover:bg-muted rounded-full transition-colors"
+                    aria-label="Toggle menu"
                   >
                     {showMobileMenu ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
                   </button>
@@ -85,7 +117,8 @@ export default function Navbar() {
                   {/* Desktop Icons - Only for Customers */}
                   {user.role !== 'VENDOR' && (
                     <div className="hidden md:flex items-center gap-4">
-                      <div className="relative">
+                      {/* ⭐ Notifications Dropdown */}
+                      <div className="relative" ref={notificationRef}>
                         <button 
                           onClick={() => setShowNotifications(!showNotifications)}
                           className="relative p-2 hover:bg-muted rounded-full transition-colors"
@@ -99,10 +132,10 @@ export default function Navbar() {
                           )}
                         </button>
 
-                        {/* ✅ Notifications Dropdown (z-index fix) */}
+                        {/* Notifications Dropdown */}
                         {showNotifications && (
                           <div className="absolute right-0 mt-2 w-80 bg-card border border-border rounded-xl shadow-elegant-lg max-h-96 overflow-y-auto z-50">
-                            <div className="p-4 border-b border-border flex items-center justify-between">
+                            <div className="p-4 border-b border-border flex items-center justify-between sticky top-0 bg-card">
                               <h3 className="font-semibold text-foreground">Notifications</h3>
                               {notifications.length > 0 && (
                                 <button
@@ -223,71 +256,86 @@ export default function Navbar() {
             </div>
           )}
         </div>
-
-        {/* Mobile Menu Dropdown */}
-        {showMobileMenu && user && (
-          <div className="md:hidden border-t border-border bg-card animate-fade-in">
-            <div className="px-4 py-3 space-y-2">
-              {user.role === 'VENDOR' ? (
-                <>
-                  <Link 
-                    href="/vendor"
-                    onClick={() => setShowMobileMenu(false)}
-                    className="flex items-center gap-3 p-3 hover:bg-muted rounded-lg transition-colors"
-                  >
-                    <LayoutDashboard className="w-5 h-5" />
-                    <span className="font-medium">Vendor Dashboard</span>
-                  </Link>
-                  <Link 
-                    href="/profile"
-                    onClick={() => setShowMobileMenu(false)}
-                    className="flex items-center gap-3 p-3 hover:bg-muted rounded-lg transition-colors"
-                  >
-                    <User className="w-5 h-5" />
-                    <span className="font-medium">Profile</span>
-                  </Link>
-                </>
-              ) : (
-                <>
-                  <Link 
-                    href="/profile"
-                    onClick={() => setShowMobileMenu(false)}
-                    className="flex items-center gap-3 p-3 hover:bg-muted rounded-lg transition-colors"
-                  >
-                    <User className="w-5 h-5" />
-                    <span className="font-medium">Profile</span>
-                  </Link>
-                  <button
-                    onClick={() => {
-                      setShowNotifications(!showNotifications);
-                      setShowMobileMenu(false);
-                    }}
-                    className="w-full flex items-center gap-3 p-3 hover:bg-muted rounded-lg transition-colors"
-                  >
-                    <Bell className="w-5 h-5" />
-                    <span className="font-medium">Notifications</span>
-                    {unreadCount > 0 && (
-                      <span className="ml-auto bg-destructive text-destructive-foreground text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                        {unreadCount}
-                      </span>
-                    )}
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-        )}
       </header>
 
-      {/* ✅ Overlay z-index fix */}
-      {(showNotifications || showMobileMenu) && (
-        <div
-          className="fixed inset-0 z-40 bg-black/20"
-          onClick={() => {
-            setShowNotifications(false);
-            setShowMobileMenu(false);
-          }}
-        />
+      {/* ⭐ Mobile Menu - Full Screen Overlay */}
+      {showMobileMenu && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => setShowMobileMenu(false)}
+          />
+          
+          {/* Menu Content */}
+          <div 
+            ref={mobileMenuRef}
+            className="absolute top-0 right-0 h-full w-[80%] max-w-sm bg-card shadow-elegant-lg animate-slide-in"
+          >
+            <div className="flex flex-col h-full">
+              {/* Header */}
+              <div className="p-4 border-b border-border flex items-center justify-between">
+                <h2 className="font-bold text-lg">Menu</h2>
+                <button
+                  onClick={() => setShowMobileMenu(false)}
+                  className="p-2 hover:bg-muted rounded-full transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Menu Items */}
+              <div className="flex-1 overflow-y-auto p-4">
+                <div className="space-y-2">
+                  {user?.role === 'VENDOR' ? (
+                    <>
+                      <Link 
+                        href="/vendor"
+                        onClick={() => setShowMobileMenu(false)}
+                        className="flex items-center gap-3 p-3 hover:bg-muted rounded-lg transition-colors"
+                      >
+                        <LayoutDashboard className="w-5 h-5" />
+                        <span className="font-medium">Vendor Dashboard</span>
+                      </Link>
+                      <Link 
+                        href="/profile"
+                        onClick={() => setShowMobileMenu(false)}
+                        className="flex items-center gap-3 p-3 hover:bg-muted rounded-lg transition-colors"
+                      >
+                        <User className="w-5 h-5" />
+                        <span className="font-medium">Profile</span>
+                      </Link>
+                    </>
+                  ) : (
+                    <>
+                      <Link 
+                        href="/profile"
+                        onClick={() => setShowMobileMenu(false)}
+                        className="flex items-center gap-3 p-3 hover:bg-muted rounded-lg transition-colors"
+                      >
+                        <User className="w-5 h-5" />
+                        <span className="font-medium">Profile</span>
+                      </Link>
+                      <Link
+                        href="/order-tracking"
+                        onClick={() => setShowMobileMenu(false)}
+                        className="flex items-center gap-3 p-3 hover:bg-muted rounded-lg transition-colors"
+                      >
+                        <Bell className="w-5 h-5" />
+                        <span className="font-medium">Notifications</span>
+                        {unreadCount > 0 && (
+                          <span className="ml-auto bg-destructive text-destructive-foreground text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                            {unreadCount}
+                          </span>
+                        )}
+                      </Link>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );

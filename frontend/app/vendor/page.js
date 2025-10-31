@@ -26,8 +26,6 @@ export default function VendorDashboard() {
     }
   }, [token, user, authLoading, router]);
 
-  // Replace just the toggleStoreStatus function in your VendorDashboard component
-
 const toggleStoreStatus = async () => {
   const newStatus = !storeStatus;
   
@@ -179,7 +177,7 @@ const toggleStoreStatus = async () => {
 function OrdersManagement({ token }) {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [expandedOrder, setExpandedOrder] = useState(null); // Track which order is expanded
+  const [expandedOrder, setExpandedOrder] = useState(null);
 
   useEffect(() => {
     fetchOrders();
@@ -234,9 +232,9 @@ function OrdersManagement({ token }) {
 
   return (
     <div>
-      <div className="bg-card rounded-2xl p-6 shadow-elegant border border-border">
-        <h2 className="font-serif text-xl font-bold mb-4">Orders Management</h2>
-        <p className="text-muted-foreground mb-6">View and manage all incoming orders</p>
+      <div className="bg-card rounded-2xl p-4 sm:p-6 shadow-elegant border border-border">
+        <h2 className="font-serif text-lg sm:text-xl font-bold mb-4">Orders Management</h2>
+        <p className="text-sm text-muted-foreground mb-6">View and manage all incoming orders</p>
 
         {orders.length === 0 ? (
           <div className="text-center py-12">
@@ -246,140 +244,148 @@ function OrdersManagement({ token }) {
         ) : (
           <div className="space-y-4">
             {orders.map((order) => (
-              <div key={order.id} className="border border-border rounded-xl overflow-hidden">
-                {/* Order Header */}
-                <div className="bg-muted/50 p-4">
-                  <div className="grid grid-cols-1 md:grid-cols-7 gap-4 items-center">
+              <div key={order.id} className="border border-border rounded-xl overflow-hidden bg-muted/20">
+                {/* ⭐ Order Header - Mobile Optimized */}
+                <div className="p-4">
+                  {/* Top Row */}
+                  <div className="flex items-center justify-between mb-3">
                     <div>
-                      <p className="text-xs text-muted-foreground mb-1">Order ID</p>
-                      <p className="font-bold">#{order.id}</p>
+                      <p className="text-xs text-muted-foreground">Order ID</p>
+                      <p className="font-bold text-foreground">#{order.id}</p>
                     </div>
-                    
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">Customer</p>
-                      <p className="font-medium">{order.user?.name || order.user?.email}</p>
+                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                      order.status === 'COMPLETED' ? 'bg-success/10 text-success' :
+                      order.status === 'READY' ? 'bg-blue-500/10 text-blue-600' :
+                      order.status === 'PROCESSING' ? 'bg-yellow-500/10 text-yellow-600' :
+                      order.status === 'CANCELLED' ? 'bg-destructive/10 text-destructive' :
+                      'bg-muted text-muted-foreground'
+                    }`}>
+                      {order.status}
+                    </span>
+                  </div>
+
+                  {/* Customer & Date Row */}
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-muted-foreground">Customer</p>
+                      <p className="font-medium text-foreground truncate">
+                        {order.user?.name || order.user?.email}
+                      </p>
                     </div>
-                    
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">Items</p>
-                      <button
-                        onClick={() => toggleOrderDetails(order.id)}
-                        className="font-medium text-secondary hover:underline flex items-center gap-1"
+                    <div className="text-right ml-4">
+                      <p className="text-xs text-muted-foreground">Date</p>
+                      <p className="text-sm text-foreground">
+                        {new Date(order.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(order.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Items & Total Row */}
+                  <div className="flex items-center justify-between mb-3">
+                    <button
+                      onClick={() => toggleOrderDetails(order.id)}
+                      className="flex items-center gap-2 text-secondary font-medium hover:underline"
+                    >
+                      <span className="text-sm">{order.items?.length || 0} items</span>
+                      <svg
+                        className={`w-4 h-4 transition-transform ${
+                          expandedOrder === order.id ? 'rotate-180' : ''
+                        }`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
                       >
-                        {order.items?.length || 0} items
-                        <svg
-                          className={`w-4 h-4 transition-transform ${
-                            expandedOrder === order.id ? 'rotate-180' : ''
-                          }`}
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </button>
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    <div className="text-right">
+                      <p className="text-xs text-muted-foreground">Total</p>
+                      <p className="font-bold text-lg text-secondary">₹{parseFloat(order.total).toFixed(2)}</p>
                     </div>
-                    
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">Total</p>
-                      <p className="font-bold text-secondary">₹{parseFloat(order.total).toFixed(2)}</p>
-                    </div>
-                    
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">Status</p>
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold inline-block ${
-                        order.status === 'COMPLETED' ? 'bg-success/10 text-success' :
-                        order.status === 'READY' ? 'bg-blue-500/10 text-blue-600' :
-                        order.status === 'PROCESSING' ? 'bg-yellow-500/10 text-yellow-600' :
-                        order.status === 'CANCELLED' ? 'bg-destructive/10 text-destructive' :
-                        'bg-muted text-muted-foreground'
-                      }`}>
-                        {order.status}
-                      </span>
-                    </div>
-                    
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">Date</p>
-                      <p className="text-sm">{new Date(order.createdAt).toLocaleDateString()}</p>
-                      <p className="text-xs text-muted-foreground">{new Date(order.createdAt).toLocaleTimeString()}</p>
-                    </div>
-                    
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">Update Status</p>
-                      <select
-                        value={order.status}
-                        onChange={(e) => updateOrderStatus(order.id, e.target.value)}
-                        className="w-full px-2 py-1 border border-border rounded-lg bg-card text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-secondary"
-                      >
-                        <option value="PENDING">Pending</option>
-                        <option value="PROCESSING">Processing</option>
-                        <option value="READY">Ready</option>
-                        <option value="COMPLETED">Completed</option>
-                        <option value="CANCELLED">Cancelled</option>
-                      </select>
-                    </div>
+                  </div>
+
+                  {/* Status Update Dropdown */}
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Update Status</p>
+                    <select
+                      value={order.status}
+                      onChange={(e) => updateOrderStatus(order.id, e.target.value)}
+                      className="w-full px-3 py-2 border border-border rounded-lg bg-card text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-secondary"
+                    >
+                      <option value="PENDING">Pending</option>
+                      <option value="PROCESSING">Processing</option>
+                      <option value="READY">Ready</option>
+                      <option value="COMPLETED">Completed</option>
+                      <option value="CANCELLED">Cancelled</option>
+                    </select>
                   </div>
                 </div>
 
-                {/* Expandable Order Items */}
+                {/* ⭐ Expandable Order Items - Improved Mobile */}
                 {expandedOrder === order.id && (
-                  <div className="p-4 bg-card border-t border-border">
-                    <h4 className="font-semibold mb-3 text-foreground">Order Items:</h4>
-                    <div className="space-y-2">
-                      {order.items && order.items.length > 0 ? (
-                        order.items.map((item, index) => (
-                          <div
-                            key={index}
-                            className="flex items-center justify-between p-3 bg-muted/30 rounded-lg"
-                          >
-                            <div className="flex items-center gap-3 flex-1">
-                              {item.menuItem?.imageUrl && (
-                                <img
-                                  src={item.menuItem.imageUrl}
-                                  alt={item.menuItem.name}
-                                  className="w-12 h-12 rounded-lg object-cover"
-                                />
-                              )}
-                              <div>
-                                <p className="font-medium text-foreground">
-                                  {item.menuItem?.name || 'Unknown Item'}
-                                </p>
-                                <p className="text-sm text-muted-foreground">
-                                  {item.menuItem?.category}
-                                </p>
+                  <div className="border-t border-border bg-card">
+                    <div className="p-4">
+                      <h4 className="font-semibold mb-3 text-foreground text-sm">Order Items:</h4>
+                      <div className="space-y-3">
+                        {order.items && order.items.length > 0 ? (
+                          order.items.map((item, index) => (
+                            <div
+                              key={index}
+                              className="bg-muted/50 rounded-lg p-3 border border-border"
+                            >
+                              {/* Mobile: Stack vertically */}
+                              <div className="flex items-start gap-3 mb-2">
+                                {item.menuItem?.imageUrl && (
+                                  <img
+                                    src={item.menuItem.imageUrl}
+                                    alt={item.menuItem.name}
+                                    className="w-14 h-14 rounded-lg object-cover flex-shrink-0"
+                                  />
+                                )}
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium text-foreground text-sm truncate">
+                                    {item.menuItem?.name || 'Unknown Item'}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {item.menuItem?.category}
+                                  </p>
+                                </div>
                               </div>
-                            </div>
-                            
-                            <div className="flex items-center gap-4">
-                              <div className="text-right">
-                                <p className="text-sm text-muted-foreground">Quantity</p>
-                                <p className="font-semibold">{item.quantity}x</p>
-                              </div>
-                              <div className="text-right">
-                                <p className="text-sm text-muted-foreground">Price</p>
-                                <p className="font-semibold text-secondary">
-                                  ₹{parseFloat(item.price || item.menuItem?.price || 0).toFixed(2)}
-                                </p>
-                              </div>
-                              <div className="text-right min-w-[80px]">
-                                <p className="text-sm text-muted-foreground">Subtotal</p>
-                                <p className="font-bold text-foreground">
+                              
+                              {/* Details Row */}
+                              <div className="flex items-center justify-between text-xs">
+                                <div className="flex items-center gap-4">
+                                  <div>
+                                    <span className="text-muted-foreground">Qty: </span>
+                                    <span className="font-semibold text-foreground">{item.quantity}x</span>
+                                  </div>
+                                  <div>
+                                    <span className="text-muted-foreground">Price: </span>
+                                    <span className="font-semibold text-foreground">
+                                      ₹{parseFloat(item.price || item.menuItem?.price || 0).toFixed(2)}
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="font-bold text-foreground">
                                   ₹{(parseFloat(item.price || item.menuItem?.price || 0) * item.quantity).toFixed(2)}
-                                </p>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        ))
-                      ) : (
-                        <p className="text-muted-foreground text-center py-4">No items found</p>
-                      )}
-                    </div>
-                    
-                    {/* Order Summary */}
-                    <div className="mt-4 pt-4 border-t border-border">
-                      <div className="flex justify-between items-center">
-                        <p className="font-semibold text-foreground">Order Total:</p>
-                        <p className="text-2xl font-bold text-secondary">₹{parseFloat(order.total).toFixed(2)}</p>
+                          ))
+                        ) : (
+                          <p className="text-muted-foreground text-center py-4 text-sm">No items found</p>
+                        )}
+                      </div>
+                      
+                      {/* Order Summary */}
+                      <div className="mt-4 pt-4 border-t border-border">
+                        <div className="flex justify-between items-center">
+                          <p className="font-semibold text-foreground">Order Total:</p>
+                          <p className="text-xl font-bold text-secondary">₹{parseFloat(order.total).toFixed(2)}</p>
+                        </div>
                       </div>
                     </div>
                   </div>

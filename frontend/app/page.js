@@ -106,20 +106,28 @@ function HomeContent() {
 
       {/* Category Filter */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-4 scrollbar-hide">
-          {categories.map((category) => (
-            <button
-              key={category}
-              onClick={() => setSelectedCategory(category)}
-              className={`px-4 sm:px-6 py-2 sm:py-3 rounded-full text-xs sm:text-sm font-semibold whitespace-nowrap transition-all ${
-                selectedCategory === category
-                  ? 'bg-secondary text-secondary-foreground shadow-lg scale-105'
-                  : 'bg-card text-foreground hover:bg-muted border border-border'
-              }`}
-            >
-              {category}
-            </button>
-          ))}
+        <div className="relative">
+          {/* ⭐ Scrollable container with proper overflow */}
+          <div className="overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
+            <div className="flex gap-2 sm:gap-3 pb-4 min-w-max">
+              {categories.map((category) => (
+                <button
+                  key={category}
+                  onClick={() => setSelectedCategory(category)}
+                  className={`px-4 sm:px-6 py-2 sm:py-3 rounded-full text-xs sm:text-sm font-semibold whitespace-nowrap transition-all ${
+                    selectedCategory === category
+                      ? 'bg-secondary text-secondary-foreground shadow-lg scale-105'
+                      : 'bg-card text-foreground hover:bg-muted border border-border'
+                  }`}
+                >
+                  {category}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* ⭐ Optional: Scroll indicators */}
+          <div className="md:hidden absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-background to-transparent pointer-events-none" />
         </div>
       </section>
 
