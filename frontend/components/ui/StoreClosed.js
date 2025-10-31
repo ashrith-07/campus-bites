@@ -2,10 +2,10 @@
 
 import { Clock, Phone, Mail } from 'lucide-react';
 import Link from 'next/link';
-import { useSSE } from '@/contexts/SSEContext'; // ⭐ Import SSE
+import { useSocket } from '@/contexts/SocketContext'; // ⭐ Import SSE
 
 export default function StoreClosed() {
-  const { storeStatus } = useSSE(); // ⭐ Get real-time status
+  const { storeStatus } = useSocket(); // ⭐ Get real-time status
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4">

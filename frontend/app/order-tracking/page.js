@@ -5,14 +5,14 @@ import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Package, Clock, CheckCircle, XCircle } from 'lucide-react';
 import Link from 'next/link';
-import { useSSE } from '@/contexts/SSEContext';
+import { useSocket } from '@/contexts/SocketContext';
 
 // Content component
 function OrderTrackingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const orderId = searchParams.get('orderId');
-  const { getOrderUpdate } = useSSE();
+  const { getOrderUpdate } = useSocket();
   
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);

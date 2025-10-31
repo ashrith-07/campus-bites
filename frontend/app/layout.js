@@ -1,25 +1,26 @@
+import { Inter } from 'next/font/google';
+import './globals.css';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { CartProvider } from '@/contexts/CartContext';
-import { SSEProvider } from '@/contexts/SSEContext';
-import NotificationToast from '@/components/ui/NotificationToast';
-import './globals.css';
+import { SocketProvider } from '@/contexts/SocketContext'; // ⭐ Changed from SSEProvider
+
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata = {
   title: 'Campus Bites',
-  description: 'Elevated Campus Dining',
+  description: 'Order delicious food on campus',
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body>
+      <body className={inter.className}>
         <AuthProvider>
-          <CartProvider>
-            <SSEProvider>
+          <SocketProvider> {/* ⭐ Changed from SSEProvider */}
+            <CartProvider>
               {children}
-              <NotificationToast />
-            </SSEProvider>
-          </CartProvider>
+            </CartProvider>
+          </SocketProvider>
         </AuthProvider>
       </body>
     </html>

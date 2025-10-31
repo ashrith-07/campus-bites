@@ -1,266 +1,204 @@
-const prisma = require('../utils/prisma');
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
-// SSE clients storage
-const clients = new Map();
-
-// SSE Helper
-const sendOrderStatusUpdate = (userId, order) => {
-  const clientRes = clients.get(userId);
-  if (clientRes) {
-    const eventData = JSON.stringify({
-      orderId: order.id,
-      status: order.status,
-      message: `Order #${order.id} is now ${order.status.toLowerCase()}.`
-    });
-    
-    clientRes.write(`event: order_update\n`);
-    clientRes.write(`data: ${eventData}\n\n`);
-    console.log(`SSE event sent to user ${userId} for order ${order.id}.`);
-  }
-};
-
-// 1. POST /api/orders/checkout
-const initiateCheckout = async (req, res) => {
-  const { totalAmount, items } = req.body; 
-
-  if (!totalAmount || !items || items.length === 0) {
-    return res.status(400).json({ error: 'Checkout requires total amount and items.' });
-  }
-  
+// Create order
+const createOrder = async (req, res) => {
   try {
-    // Mock payment for now
-    const mockPaymentIntentId = 'mock_pi_' + Date.now();
-    
-    res.status(200).json({ 
-      success: true,
-      message: 'Checkout initiated.',
-      mockPaymentIntentId: mockPaymentIntentId,
-      totalAmount: parseFloat(totalAmount)
+    const { items, total, deliveryAddress, paymentMethod } = req.body;
+
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ error: 'Items are required' });
+    }
+
+    const order = await prisma.order.create({
+      data: {
+        userId: req.user.id,
+        total: parseFloat(total),
+        status: 'PENDING',
+        deliveryAddress: deliveryAddress || null,
+        paymentMethod: paymentMethod || 'CASH',
+        items: {
+          create: items.map(item => ({
+            menuItemId: item.menuItemId,
+            quantity: item.quantity,
+            price: parseFloat(item.price)
+          }))
+        }
+      },
+      include: {
+        items: { include: { menuItem: true } },
+        user: { select: { id: true, name: true, email: true } }
+      }
     });
-  } catch (error) {
-    console.error('Checkout error:', error);
-    res.status(500).json({ error: 'Checkout failed.' });
-  }
-};
 
-// 2. POST /api/orders/confirm
-const confirmOrder = async (req, res) => {
-  const customerId = req.user.userId; 
-  const { totalAmount, items, paymentIntentId } = req.body; 
-
-  console.log('Confirm order request:', { customerId, totalAmount, items, paymentIntentId });
-
-  if (!totalAmount || !items || items.length === 0 || !paymentIntentId) {
-    return res.status(400).json({ 
-      error: 'Order confirmation requires total amount, items, and payment intent ID.' 
-    });
-  }
-  
-  try {
-    // Create order with transaction
-    const newOrder = await prisma.$transaction(async (prisma) => {
-      
-      // Create order
-      const order = await prisma.order.create({
-        data: {
-          userId: customerId,
-          total: parseFloat(totalAmount),
-          status: 'PENDING',
-          paymentIntentId: paymentIntentId,
-        },
-      });
-
-      console.log('Order created:', order);
-
-      // Create order items
-      const orderItemsData = items.map(item => ({
+    // ⭐ Emit to user via Socket
+    if (global.emitToUser) {
+      global.emitToUser(req.user.id, 'order-update', {
         orderId: order.id,
-        menuItemId: item.menuItemId,
-        quantity: item.quantity,
-      }));
-
-      await prisma.orderItem.createMany({
-        data: orderItemsData,
-      });
-
-      console.log('Order items created:', orderItemsData.length);
-
-      return order;
-    });
-
-    console.log('Order confirmed successfully:', newOrder);
-
-    res.status(201).json({ 
-      success: true,
-      message: 'Order confirmed and placed successfully.',
-      order: newOrder
-    });
-
-  } catch (error) {
-    console.error('Error confirming order:', error);
-    res.status(500).json({ 
-      error: 'Failed to confirm order.',
-      details: error.message 
-    });
-  }
-};
-
-// 3. GET /api/orders
-const getOrders = async (req, res) => {
-  const { userId, role } = req.user;
-  
-  try {
-    let orders;
-
-    if (role === 'VENDOR') {
-      orders = await prisma.order.findMany({
-        orderBy: { createdAt: 'desc' },
-        include: {
-          user: { select: { id: true, email: true, name: true } },
-          items: { include: { menuItem: true } }
-        }
-      });
-    } else { 
-      orders = await prisma.order.findMany({
-        where: { userId: userId },
-        orderBy: { createdAt: 'desc' },
-        include: {
-          items: { include: { menuItem: true } }
-        }
+        status: 'PENDING',
+        message: `Your order #${order.id} has been placed successfully!`,
+        timestamp: new Date().toISOString()
       });
     }
 
-    res.status(200).json({ success: true, orders });
-
+    res.status(201).json({ success: true, order });
   } catch (error) {
-    console.error('Error fetching orders:', error);
-    res.status(500).json({ error: 'Failed to retrieve orders.' });
+    console.error('Error creating order:', error);
+    res.status(500).json({ error: 'Failed to create order' });
   }
 };
 
-// 4. GET /api/orders/:id
-const getOrderById = async (req, res) => {
-  const orderId = parseInt(req.params.id);
-  const { userId, role } = req.user;
-
-  if (isNaN(orderId)) {
-    return res.status(400).json({ error: 'Invalid Order ID.' });
-  }
-
+// Get all orders
+const getAllOrders = async (req, res) => {
   try {
+    const whereClause = req.user.role === 'VENDOR' 
+      ? {} 
+      : { userId: req.user.id };
+
+    const orders = await prisma.order.findMany({
+      where: whereClause,
+      include: {
+        items: { include: { menuItem: true } },
+        user: { select: { id: true, name: true, email: true } }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    res.json({ orders });
+  } catch (error) {
+    console.error('Error fetching orders:', error);
+    res.status(500).json({ error: 'Failed to fetch orders' });
+  }
+};
+
+// Get order by ID
+const getOrderById = async (req, res) => {
+  try {
+    const orderId = parseInt(req.params.id);
+
     const order = await prisma.order.findUnique({
       where: { id: orderId },
       include: {
-        user: { select: { id: true, email: true, name: true } },
-        items: { include: { menuItem: true } }
+        items: { include: { menuItem: true } },
+        user: { select: { id: true, name: true, email: true } }
       }
     });
 
     if (!order) {
-      return res.status(404).json({ error: 'Order not found.' });
+      return res.status(404).json({ error: 'Order not found' });
     }
 
-    // Authorization: Customer can only view their own orders
-    if (role === 'CUSTOMER' && order.userId !== userId) {
-      return res.status(403).json({ error: 'You do not have access to this order.' });
+    if (req.user.role !== 'VENDOR' && order.userId !== req.user.id) {
+      return res.status(403).json({ error: 'Unauthorized to view this order' });
     }
 
-    res.status(200).json({ success: true, order });
-
+    res.json({ order });
   } catch (error) {
-    console.error('Error fetching order by ID:', error);
-    res.status(500).json({ error: 'Failed to retrieve order details.' });
+    console.error('Error fetching order:', error);
+    res.status(500).json({ error: 'Failed to fetch order' });
   }
 };
 
-// 5. PUT /api/orders/:id
-const updateOrder = async (req, res) => {
-  const orderId = parseInt(req.params.id);
-  const { status } = req.body; 
-
-  if (isNaN(orderId) || !status) {
-    return res.status(400).json({ error: 'Invalid Order ID or missing status.' });
-  }
-  
+// Update order status
+const updateOrderStatus = async (req, res) => {
   try {
+    const orderId = parseInt(req.params.id);
+    const { status } = req.body;
+
+    const validStatuses = ['PENDING', 'PROCESSING', 'READY', 'COMPLETED', 'CANCELLED'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ error: 'Invalid status', validStatuses });
+    }
+
+    const existingOrder = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: { user: { select: { id: true, name: true, email: true } } }
+    });
+
+    if (!existingOrder) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
     const updatedOrder = await prisma.order.update({
       where: { id: orderId },
       data: { status },
-      select: { id: true, status: true, userId: true } 
+      include: {
+        items: { include: { menuItem: true } },
+        user: { select: { id: true, name: true, email: true } }
+      }
     });
 
-    // Send SSE update
-    sendOrderStatusUpdate(updatedOrder.userId, updatedOrder);
-    
-    res.status(200).json({ 
-      success: true,
-      message: `Order ${orderId} status updated to ${status}.`,
-      order: updatedOrder
-    });
+    // ⭐ Emit to customer via Socket
+    const statusMessages = {
+      'PENDING': `Your order #${orderId} is pending confirmation`,
+      'PROCESSING': `Your order #${orderId} is being prepared! 👨‍🍳`,
+      'READY': `Your order #${orderId} is ready for pickup! 🎉`,
+      'COMPLETED': `Your order #${orderId} has been completed. Thank you!`,
+      'CANCELLED': `Your order #${orderId} has been cancelled`
+    };
 
-  } catch (error) {
-    if (error.code === 'P2025') {
-      return res.status(404).json({ error: 'Order not found.' });
+    if (global.emitToUser) {
+      global.emitToUser(existingOrder.userId, 'order-update', {
+        orderId,
+        status,
+        message: statusMessages[status],
+        timestamp: new Date().toISOString()
+      });
     }
-    console.error('Error updating order status:', error);
-    res.status(500).json({ error: 'Failed to update order status.' });
+
+    console.log(`[Order ${orderId}] Status updated to ${status} by vendor ${req.user.id}`);
+
+    res.json({ success: true, order: updatedOrder });
+  } catch (error) {
+    console.error('Error updating order:', error);
+    res.status(500).json({ error: 'Failed to update order' });
   }
 };
 
-// 6. GET /api/orders/stream (SSE)
-// 6. GET /api/orders/stream (SSE)
-const connectToOrderStream = (req, res) => {
-  const customerId = req.user.userId;
+// Delete order
+const deleteOrder = async (req, res) => {
+  try {
+    const orderId = parseInt(req.params.id);
 
-  // Set SSE headers
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
-  res.setHeader('Access-Control-Allow-Origin', process.env.FRONTEND_URL || 'https://campus-bites-web.vercel.app');
-  res.setHeader('Access-Control-Allow-Credentials', 'true'); // Add this if needed
-  res.setHeader('X-Accel-Buffering', 'no');
-  
-  // IMPORTANT: Flush headers to establish connection immediately
-  res.flushHeaders();
-  
-  // Send initial message
-  res.write(`data: ${JSON.stringify({ message: "Connected to Campus Bites order stream." })}\n\n`);
+    const order = await prisma.order.findUnique({
+      where: { id: orderId }
+    });
 
-  // Store connection
-  clients.set(customerId, res);
-  console.log(`SSE connection established for user ${customerId}`);
-
-  // Heartbeat every 30 seconds
-  const heartbeat = setInterval(() => {
-    try {
-      res.write(`: heartbeat\n\n`);
-    } catch (error) {
-      console.error('Error sending heartbeat:', error);
-      clearInterval(heartbeat);
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
     }
-  }, 30000);
 
-  // Cleanup
-  req.on('close', () => {
-    clearInterval(heartbeat);
-    clients.delete(customerId);
-    console.log(`SSE connection closed for user ${customerId}`);
-  });
-  
-  // Handle errors
-  req.on('error', (error) => {
-    console.error('SSE connection error:', error);
-    clearInterval(heartbeat);
-    clients.delete(customerId);
-  });
+    if (req.user.role !== 'VENDOR' && order.userId !== req.user.id) {
+      return res.status(403).json({ error: 'Unauthorized to delete this order' });
+    }
+
+    if (order.status === 'COMPLETED') {
+      return res.status(400).json({ error: 'Cannot delete completed orders' });
+    }
+
+    await prisma.orderItem.deleteMany({ where: { orderId } });
+    await prisma.order.delete({ where: { id: orderId } });
+
+    if (req.user.role === 'VENDOR' && global.emitToUser) {
+      global.emitToUser(order.userId, 'order-update', {
+        orderId,
+        status: 'CANCELLED',
+        message: `Your order #${orderId} has been cancelled by the vendor`,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    res.json({ success: true, message: 'Order deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting order:', error);
+    res.status(500).json({ error: 'Failed to delete order' });
+  }
 };
 
 module.exports = {
-  initiateCheckout,
-  confirmOrder,
-  getOrders,
+  createOrder,
+  getAllOrders,
   getOrderById,
-  updateOrder,
-  connectToOrderStream,
+  updateOrderStatus,
+  deleteOrder
 };
-

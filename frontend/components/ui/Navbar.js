@@ -2,7 +2,7 @@
 import { Search, Bell, ShoppingCart, User, Menu, X, LayoutDashboard } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
-import { useSSE } from '@/contexts/SSEContext';
+import { useSocket } from '@/contexts/SocketContext';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
@@ -10,7 +10,7 @@ import { useState, useEffect, useRef } from 'react';
 export default function Navbar() {
   const { user } = useAuth();
   const { getCartCount, setShowCart } = useCart();
-  const { unreadCount, notifications, markAsRead, markAllAsRead } = useSSE();
+  const { unreadCount, notifications, markAsRead, markAllAsRead } = useSocket();
   const router = useRouter();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);

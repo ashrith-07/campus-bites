@@ -9,14 +9,14 @@ import CartSidebar from '@/components/ui/CartSidebar';
 import StoreClosed from '@/components/ui/StoreClosed';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
-import { useSSE } from '@/contexts/SSEContext'; // ⭐ Import SSE
+import { useSocket } from '@/contexts/SocketContext'; // ⭐ Import SSE
 
 function HomeContent() {
   const categories = ['All', 'Pizza', 'Rolls', 'Beverages', 'Desserts', 'Sandwiches', 'Snacks'];
   const searchParams = useSearchParams();
   const searchQuery = searchParams.get('search') || '';
   const { user } = useAuth();
-  const { storeStatus } = useSSE(); // ⭐ Get store status from SSE
+  const { storeStatus } = useSocket(); // ⭐ Get store status from SSE
 
   const [menuItems, setMenuItems] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('All');

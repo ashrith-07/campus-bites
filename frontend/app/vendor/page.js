@@ -3,13 +3,13 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { useSSE } from '@/contexts/SSEContext';
+import { useSocket } from '@/contexts/SocketContext';
 import { Package, ChefHat, BarChart3, LogOut } from 'lucide-react';
 
 export default function VendorDashboard() {
   const router = useRouter();
   const { user, token, logout, loading: authLoading } = useAuth();
-  const { storeStatus, updateStoreStatus } = useSSE();
+  const { storeStatus, updateStoreStatus } = useSocket();
   const [activeTab, setActiveTab] = useState('orders');
 
   useEffect(() => {
