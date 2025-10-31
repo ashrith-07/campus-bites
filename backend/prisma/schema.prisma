@@ -69,6 +69,16 @@ model OrderItem {
   @@map("order_items")
 }
 
+// ⭐ NEW: Store Settings Model
+model StoreSetting {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("store_settings")
+}
+
 enum UserRole {
   CUSTOMER
   VENDOR

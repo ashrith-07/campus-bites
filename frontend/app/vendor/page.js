@@ -26,33 +26,45 @@ export default function VendorDashboard() {
     }
   }, [token, user, authLoading, router]);
 
-  const toggleStoreStatus = async () => {
-    const newStatus = !storeStatus;
-    
-    try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://campus-bites-server.vercel.app/api';
-      
-      const response = await fetch(`${API_URL}/notifications/store-status?token=${token}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ isOpen: newStatus })
-      });
+  // Replace just the toggleStoreStatus function in your VendorDashboard component
 
-      if (response.ok) {
-        updateStoreStatus(newStatus);
-        console.log('✅ Store status updated:', newStatus);
-      } else {
-        const error = await response.json();
-        console.error('❌ Failed to update store status:', error);
-        alert('Failed to update store status');
-      }
-    } catch (error) {
-      console.error('❌ Error updating store status:', error);
+const toggleStoreStatus = async () => {
+  const newStatus = !storeStatus;
+  
+  // Optimistic update
+  updateStoreStatus(newStatus);
+  
+  try {
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://campus-bites-server.vercel.app/api';
+    
+    const response = await fetch(`${API_URL}/store/status`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ isOpen: newStatus })
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      console.log('✅ Store status updated:', data.isOpen);
+      // Confirm with server response
+      updateStoreStatus(data.isOpen);
+    } else {
+      // Revert on error
+      updateStoreStatus(!newStatus);
+      const error = await response.json();
+      console.error('❌ Failed to update store status:', error);
       alert('Failed to update store status');
     }
-  };
+  } catch (error) {
+    // Revert on error
+    updateStoreStatus(!newStatus);
+    console.error('❌ Error updating store status:', error);
+    alert('Failed to update store status. Please check your connection.');
+  }
+};
 
   const handleLogout = () => {
     logout();

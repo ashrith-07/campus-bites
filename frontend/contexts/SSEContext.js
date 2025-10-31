@@ -10,13 +10,45 @@ export function SSEProvider({ children }) {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [orderUpdates, setOrderUpdates] = useState({});
-  const [storeStatus, setStoreStatus] = useState(true); // ⭐ Added store status
+  const [storeStatus, setStoreStatus] = useState(true);
   const eventSourceRef = useRef(null);
   const reconnectTimeoutRef = useRef(null);
+  const pollingIntervalRef = useRef(null);
 
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://campus-bites-server.vercel.app/api';
+
+  // ⭐ Polling function - checks store status every 10 seconds
+  const pollStoreStatus = async () => {
+    try {
+      const response = await fetch(`${API_URL}/store/status`);
+      if (response.ok) {
+        const data = await response.json();
+        setStoreStatus(data.isOpen);
+        console.log('[Poll] Store status:', data.isOpen);
+      }
+    } catch (error) {
+      console.error('[Poll] Error fetching store status:', error);
+    }
+  };
+
+  // ⭐ Start polling when component mounts
+  useEffect(() => {
+    // Initial fetch
+    pollStoreStatus();
+
+    // Poll every 10 seconds
+    pollingIntervalRef.current = setInterval(pollStoreStatus, 10000);
+
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+    };
+  }, []);
+
+  // SSE Connection (enhancement for real-time updates)
   useEffect(() => {
     if (!token || !user) {
-      // Disconnect if user logs out
       if (eventSourceRef.current) {
         eventSourceRef.current.close();
         eventSourceRef.current = null;
@@ -28,7 +60,6 @@ export function SSEProvider({ children }) {
       return;
     }
 
-    // Connect to SSE
     connectToSSE();
 
     return () => {
@@ -45,35 +76,30 @@ export function SSEProvider({ children }) {
 
   const connectToSSE = () => {
     if (eventSourceRef.current) {
-      return; // Already connected
-    }
-
-    if (!token) {
-      console.log('No token available for SSE connection');
       return;
     }
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://campus-bites-server.vercel.app/api';
-    // Pass token as query parameter since EventSource doesn't support headers
-    const url = `${apiUrl}/notifications/stream?token=${token}`;
+    if (!token) {
+      console.log('[SSE] No token available');
+      return;
+    }
 
-    console.log('Connecting to SSE:', url);
+    const url = `${API_URL}/notifications/stream?token=${token}`;
+    console.log('[SSE] Connecting...');
 
     const eventSource = new EventSource(url);
 
-    // Connection opened
     eventSource.onopen = () => {
-      console.log('✅ SSE connection established');
+      console.log('[SSE] ✅ Connected');
     };
 
-    // ⭐ Listen for store status updates
+    // Store status updates via SSE
     eventSource.addEventListener('store-status', (event) => {
       try {
         const data = JSON.parse(event.data);
-        console.log('🏪 Store status update:', data.isOpen);
+        console.log('[SSE] 🏪 Store status update:', data.isOpen);
         setStoreStatus(data.isOpen);
         
-        // Show toast notification for customers
         if (user?.role !== 'VENDOR') {
           const message = data.isOpen 
             ? '🎉 Store is now open! You can place orders.' 
@@ -87,17 +113,16 @@ export function SSEProvider({ children }) {
           });
         }
       } catch (error) {
-        console.error('Error parsing store status:', error);
+        console.error('[SSE] Error parsing store status:', error);
       }
     });
 
-    // Listen for order updates
+    // Order updates via SSE
     eventSource.addEventListener('order-update', (event) => {
       try {
         const data = JSON.parse(event.data);
-        console.log('📦 Order update received:', data);
+        console.log('[SSE] 📦 Order update:', data);
         
-        // Add notification
         const notification = {
           id: Date.now(),
           orderId: data.orderId,
@@ -111,7 +136,6 @@ export function SSEProvider({ children }) {
         setNotifications(prev => [notification, ...prev]);
         setUnreadCount(prev => prev + 1);
 
-        // Update order status for real-time tracking
         setOrderUpdates(prev => ({
           ...prev,
           [data.orderId]: {
@@ -120,50 +144,45 @@ export function SSEProvider({ children }) {
           }
         }));
 
-        // Show toast notification
         showToast(notification);
       } catch (error) {
-        console.error('Error parsing SSE data:', error);
+        console.error('[SSE] Error parsing order update:', error);
       }
     });
 
-    // Handle general messages (including connection confirmation)
+    // Handle general messages
     eventSource.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        console.log('SSE message:', data);
-        
-        // Handle initial store status
         if (data.type === 'connected' || data.type === 'store-status') {
           if (typeof data.isOpen !== 'undefined') {
             setStoreStatus(data.isOpen);
           }
         }
       } catch (error) {
-        console.log('SSE heartbeat');
+        // Heartbeat or unparseable message
       }
     };
 
     // Handle errors
     eventSource.onerror = (error) => {
-      console.error('❌ SSE connection error');
+      console.error('[SSE] ❌ Connection error');
       eventSource.close();
       eventSourceRef.current = null;
       
-      // Retry connection after 5 seconds
+      // Don't retry immediately - polling will keep status updated
       reconnectTimeoutRef.current = setTimeout(() => {
         if (token && user) {
-          console.log('Retrying SSE connection...');
+          console.log('[SSE] Retrying connection...');
           connectToSSE();
         }
-      }, 5000);
+      }, 30000); // Retry after 30 seconds
     };
 
     eventSourceRef.current = eventSource;
   };
 
   const showToast = (notification) => {
-    // Create a custom event that a Toast component can listen to
     const event = new CustomEvent('show-notification', { detail: notification });
     window.dispatchEvent(event);
   };
@@ -189,7 +208,6 @@ export function SSEProvider({ children }) {
     return orderUpdates[orderId] || null;
   };
 
-  // ⭐ Add function to update store status (for vendor)
   const updateStoreStatus = (newStatus) => {
     setStoreStatus(newStatus);
   };
@@ -204,8 +222,8 @@ export function SSEProvider({ children }) {
         clearNotifications,
         getOrderUpdate,
         orderUpdates,
-        storeStatus,        // ⭐ Export store status
-        updateStoreStatus   // ⭐ Export update function
+        storeStatus,
+        updateStoreStatus
       }}
     >
       {children}
