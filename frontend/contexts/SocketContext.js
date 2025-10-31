@@ -16,12 +16,12 @@ export function SocketProvider({ children }) {
   const socketRef = useRef(null);
   const pollingIntervalRef = useRef(null);
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://campus-bites-server.vercel.app';
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://campus-bites-server.vercel.app/api';
 
   // ⭐ Polling fallback - checks store status every 10 seconds
   const pollStoreStatus = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/store/status`);
+      const response = await fetch(`${API_URL}/store/status`);
       if (response.ok) {
         const data = await response.json();
         setStoreStatus(data.isOpen);
