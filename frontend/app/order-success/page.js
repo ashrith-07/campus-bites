@@ -1,35 +1,33 @@
+// frontend/app/order-success/page.js
 'use client';
 
 import { Suspense } from 'react';
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { useCart } from '@/contexts/CartContext';
 
 function OrderSuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const orderId = searchParams.get('orderId');
-  const { clearCart } = useCart();
   
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    console.log('📍 Order Success Page - orderId:', orderId);
+    console.log('📍 Order Success Page mounted');
+    console.log('📍 orderId from URL:', orderId);
+    console.log('📍 Full URL:', window.location.href);
     
-    if (!orderId) {
-      console.error('❌ No orderId found in URL');
-      // Give it a moment before redirecting
-      const timer = setTimeout(() => {
-        router.push('/');
-      }, 1000);
-      return () => clearTimeout(timer);
+    // Only fetch if we have an orderId
+    if (orderId) {
+      fetchOrderDetails();
+    } else {
+      console.error('❌ No orderId in URL');
+      setError('No order ID provided');
+      setLoading(false);
     }
-
-    clearCart();
-    fetchOrderDetails();
   }, [orderId]);
 
   const fetchOrderDetails = async () => {
@@ -37,7 +35,7 @@ function OrderSuccessContent() {
       const token = localStorage.getItem('token');
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://campus-bites-server.vercel.app/api';
       
-      console.log('📡 Fetching order details for:', orderId);
+      console.log('📡 Fetching order details for ID:', orderId);
       
       const response = await fetch(`${API_URL}/orders/${orderId}`, {
         headers: {
@@ -50,7 +48,7 @@ function OrderSuccessContent() {
       }
 
       const data = await response.json();
-      console.log('✅ Order details fetched:', data.order);
+      console.log('✅ Order details loaded:', data.order);
       setOrder(data.order);
     } catch (err) {
       console.error('❌ Error fetching order:', err);
@@ -60,23 +58,38 @@ function OrderSuccessContent() {
     }
   };
 
+  // Show loading state
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-secondary border-t-transparent mx-auto"></div>
           <p className="mt-4 text-muted-foreground">Loading order details...</p>
+          {orderId && <p className="text-xs text-muted-foreground mt-2">Order #{orderId}</p>}
         </div>
       </div>
     );
   }
 
+  // Show error state
   if (error || !order) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="text-center max-w-md">
+          <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-destructive" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-bold text-foreground mb-2">Unable to Load Order</h2>
           <p className="text-destructive mb-4">{error || 'Order not found'}</p>
-          <Link href="/" className="text-secondary hover:underline">
+          <p className="text-sm text-muted-foreground mb-6">
+            Order ID: {orderId || 'Not provided'}
+          </p>
+          <Link 
+            href="/" 
+            className="inline-block bg-secondary text-secondary-foreground px-6 py-3 rounded-xl font-semibold hover:opacity-90 transition"
+          >
             Go to Home
           </Link>
         </div>
@@ -84,13 +97,14 @@ function OrderSuccessContent() {
     );
   }
 
+  // Show success state
   return (
     <div className="min-h-screen bg-background py-8">
       <div className="max-w-2xl mx-auto px-4">
         {/* Success Icon */}
         <div className="bg-card rounded-2xl p-8 text-center mb-6 shadow-elegant border border-border">
-          <div className="w-20 h-20 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-10 h-10 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-10 h-10 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
@@ -117,7 +131,7 @@ function OrderSuccessContent() {
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Payment:</span>
-              <span className="font-medium text-foreground">{order.paymentIntentId}</span>
+              <span className="font-medium text-foreground text-xs">{order.paymentIntentId}</span>
             </div>
           </div>
 
@@ -129,15 +143,7 @@ function OrderSuccessContent() {
                   <div className="flex items-center gap-3">
                     {item.menuItem.imageUrl && (
                       <div className="w-12 h-12 rounded flex items-center justify-center bg-muted">
-                        {item.menuItem.isEmoji ? (
-                          <span className="text-2xl">{item.menuItem.imageUrl}</span>
-                        ) : (
-                          <img 
-                            src={item.menuItem.imageUrl} 
-                            alt={item.menuItem.name}
-                            className="w-12 h-12 rounded object-cover"
-                          />
-                        )}
+                        <span className="text-2xl">{item.menuItem.imageUrl}</span>
                       </div>
                     )}
                     <div>
