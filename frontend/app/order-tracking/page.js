@@ -7,7 +7,6 @@ import { ArrowLeft, Package, Clock, CheckCircle, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useSocket } from '@/contexts/SocketContext';
 
-// Content component
 function OrderTrackingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -19,10 +18,16 @@ function OrderTrackingContent() {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    console.log('📍 Order Tracking Page - orderId:', orderId);
+    
     if (!orderId) {
-      router.push('/');
-      return;
+      console.error('❌ No orderId found in URL');
+      const timer = setTimeout(() => {
+        router.push('/');
+      }, 1000);
+      return () => clearTimeout(timer);
     }
+    
     fetchOrderDetails();
   }, [orderId]);
 
@@ -32,30 +37,37 @@ function OrderTrackingContent() {
 
     const update = getOrderUpdate(parseInt(orderId));
     if (update && update.status !== order.status) {
-      // Update order status in real-time
+      console.log('🔄 Real-time order update:', update);
       setOrder(prev => ({
         ...prev,
         status: update.status
       }));
     }
-  }, [getOrderUpdate(parseInt(orderId))]);
+  }, [orderId, order, getOrderUpdate]);
 
   const fetchOrderDetails = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`https://campus-bites-server.vercel.app/api/orders/${orderId}`, {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://campus-bites-server.vercel.app/api';
+      
+      console.log('📡 Fetching order details for:', orderId);
+      
+      const response = await fetch(`${API_URL}/orders/${orderId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
 
-      if (!response.ok) throw new Error('Failed to fetch order details');
+      if (!response.ok) {
+        throw new Error('Failed to fetch order details');
+      }
 
       const data = await response.json();
+      console.log('✅ Order details fetched:', data.order);
       setOrder(data.order);
     } catch (err) {
+      console.error('❌ Error fetching order:', err);
       setError('Failed to load order details');
-      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -206,11 +218,19 @@ function OrderTrackingContent() {
               {order.items && order.items.map((item) => (
                 <div key={item.id} className="flex justify-between items-center">
                   <div className="flex items-center gap-3">
-                    <img 
-                      src={item.menuItem.imageUrl} 
-                      alt={item.menuItem.name}
-                      className="w-12 h-12 rounded object-cover"
-                    />
+                    {item.menuItem.imageUrl && (
+                      <div className="w-12 h-12 rounded flex items-center justify-center bg-muted">
+                        {item.menuItem.isEmoji ? (
+                          <span className="text-2xl">{item.menuItem.imageUrl}</span>
+                        ) : (
+                          <img 
+                            src={item.menuItem.imageUrl} 
+                            alt={item.menuItem.name}
+                            className="w-12 h-12 rounded object-cover"
+                          />
+                        )}
+                      </div>
+                    )}
                     <div>
                       <p className="font-medium text-foreground">{item.menuItem.name}</p>
                       <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
@@ -259,7 +279,6 @@ function OrderTrackingContent() {
   );
 }
 
-// Main component with Suspense
 export default function OrderTrackingPage() {
   return (
     <Suspense fallback={
@@ -274,6 +293,3 @@ export default function OrderTrackingPage() {
     </Suspense>
   );
 }
-
-
-

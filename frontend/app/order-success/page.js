@@ -6,7 +6,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useCart } from '@/contexts/CartContext';
 
-// Separate component that uses useSearchParams
 function OrderSuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -18,9 +17,15 @@ function OrderSuccessContent() {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    console.log('📍 Order Success Page - orderId:', orderId);
+    
     if (!orderId) {
-      router.push('/');
-      return;
+      console.error('❌ No orderId found in URL');
+      // Give it a moment before redirecting
+      const timer = setTimeout(() => {
+        router.push('/');
+      }, 1000);
+      return () => clearTimeout(timer);
     }
 
     clearCart();
@@ -30,19 +35,26 @@ function OrderSuccessContent() {
   const fetchOrderDetails = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`https://campus-bites-server.vercel.app/api/orders/${orderId}`, {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://campus-bites-server.vercel.app/api';
+      
+      console.log('📡 Fetching order details for:', orderId);
+      
+      const response = await fetch(`${API_URL}/orders/${orderId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
 
-      if (!response.ok) throw new Error('Failed to fetch order details');
+      if (!response.ok) {
+        throw new Error('Failed to fetch order details');
+      }
 
       const data = await response.json();
+      console.log('✅ Order details fetched:', data.order);
       setOrder(data.order);
     } catch (err) {
+      console.error('❌ Error fetching order:', err);
       setError('Failed to load order details');
-      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -115,11 +127,19 @@ function OrderSuccessContent() {
               {order.items && order.items.map((item) => (
                 <div key={item.id} className="flex justify-between items-center">
                   <div className="flex items-center gap-3">
-                    <img 
-                      src={item.menuItem.imageUrl} 
-                      alt={item.menuItem.name}
-                      className="w-12 h-12 rounded object-cover"
-                    />
+                    {item.menuItem.imageUrl && (
+                      <div className="w-12 h-12 rounded flex items-center justify-center bg-muted">
+                        {item.menuItem.isEmoji ? (
+                          <span className="text-2xl">{item.menuItem.imageUrl}</span>
+                        ) : (
+                          <img 
+                            src={item.menuItem.imageUrl} 
+                            alt={item.menuItem.name}
+                            className="w-12 h-12 rounded object-cover"
+                          />
+                        )}
+                      </div>
+                    )}
                     <div>
                       <p className="font-medium text-foreground">{item.menuItem.name}</p>
                       <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
@@ -159,7 +179,6 @@ function OrderSuccessContent() {
   );
 }
 
-// Main component with Suspense wrapper
 export default function OrderSuccessPage() {
   return (
     <Suspense fallback={
