@@ -60,7 +60,7 @@ export default function CheckoutPage() {
       console.log('📦 Cart items:', cart);
       console.log('💰 Total:', total);
 
-      // Step 1: Create checkout (get mock payment order)
+      // Step 1: Create checkout
       const checkoutResponse = await fetch(`${API_URL}/orders/checkout`, {
         method: 'POST',
         headers: {
@@ -72,19 +72,12 @@ export default function CheckoutPage() {
           items: cart.map(item => ({
             menuItemId: item.id,
             quantity: item.quantity
-            // ✅ REMOVED: price field (not in Prisma schema)
+            // ✅ Removed price field
           }))
         })
       });
 
       console.log('✅ Checkout response status:', checkoutResponse.status);
-
-      const contentType = checkoutResponse.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const text = await checkoutResponse.text();
-        console.error('❌ Non-JSON checkout response:', text.substring(0, 200));
-        throw new Error('Server returned an invalid response. Please try again.');
-      }
 
       if (!checkoutResponse.ok) {
         const errorData = await checkoutResponse.json();
@@ -95,30 +88,29 @@ export default function CheckoutPage() {
       const checkoutData = await checkoutResponse.json();
       console.log('✅ Checkout successful:', checkoutData);
 
-      // Step 2: Simulate payment (2 second delay for realism)
+      // Step 2: Simulate payment
       console.log('💳 Processing mock payment...');
       await new Promise(resolve => setTimeout(resolve, 2000));
 
-      // Generate mock payment credentials
       const mockPaymentId = `pay_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const mockSignature = `sig_${Math.random().toString(36).substr(2, 16)}`;
 
       console.log('✅ Mock payment completed:', mockPaymentId);
 
-      // Step 3: Confirm order with mock payment
+      // Step 3: Confirm order
       const confirmPayload = {
         totalAmount: total,
         items: cart.map(item => ({
           menuItemId: item.id,
           quantity: item.quantity
-          // ✅ REMOVED: price field (not in Prisma schema)
+          // ✅ Removed price field
         })),
         paymentId: mockPaymentId,
         orderId: checkoutData.orderId,
         signature: mockSignature
       };
 
-      console.log('📤 Confirming order with payload:', confirmPayload);
+      console.log('📤 Confirming order...');
 
       const confirmResponse = await fetch(`${API_URL}/orders/confirm`, {
         method: 'POST',
@@ -131,13 +123,6 @@ export default function CheckoutPage() {
 
       console.log('📥 Confirm response status:', confirmResponse.status);
 
-      const confirmContentType = confirmResponse.headers.get('content-type');
-      if (!confirmContentType || !confirmContentType.includes('application/json')) {
-        const text = await confirmResponse.text();
-        console.error('❌ Non-JSON confirm response:', text.substring(0, 500));
-        throw new Error('Server returned an invalid response. Please try again.');
-      }
-
       if (!confirmResponse.ok) {
         const errorData = await confirmResponse.json();
         console.error('❌ Confirm error:', errorData);
@@ -147,7 +132,6 @@ export default function CheckoutPage() {
       const confirmData = await confirmResponse.json();
       console.log('✅ Order confirmed successfully:', confirmData);
 
-      // Clear cart and redirect
       clearCart();
       router.replace(`/order-success?orderId=${confirmData.order.id}`);
       
@@ -161,7 +145,6 @@ export default function CheckoutPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="bg-card border-b sticky top-0 z-40 shadow-sm">
         <div className="max-w-5xl mx-auto px-6 py-4">
           <div className="flex items-center gap-4">
@@ -181,9 +164,7 @@ export default function CheckoutPage() {
 
       <div className="max-w-5xl mx-auto px-6 py-8">
         <div className="grid md:grid-cols-2 gap-8">
-          {/* Left Column - Order Summary */}
           <div className="space-y-6">
-            {/* Order Summary Card */}
             <div className="bg-card rounded-2xl p-6 shadow-elegant border border-border">
               <h2 className="font-serif text-2xl font-bold text-foreground mb-6">
                 Order Summary
@@ -219,7 +200,6 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            {/* Pickup Details Card */}
             <div className="bg-card rounded-2xl p-6 shadow-elegant border border-border">
               <h2 className="font-serif text-xl font-bold text-foreground mb-6">
                 Pickup Details
@@ -250,29 +230,20 @@ export default function CheckoutPage() {
             </div>
           </div>
 
-          {/* Right Column - Payment Method */}
           <div className="space-y-6">
-            {/* Payment Method Card */}
             <div className="bg-card rounded-2xl p-6 shadow-elegant border border-border">
               <h2 className="font-serif text-2xl font-bold text-foreground mb-6">
                 Payment Method
               </h2>
 
               <div className="space-y-3">
-                {/* Razorpay Option */}
-                <label
-                  className={`flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                    paymentMethod === 'razorpay'
-                      ? 'border-secondary bg-secondary/5'
-                      : 'border-border hover:border-muted-foreground'
-                  }`}
-                >
+                <label className="flex items-center justify-between p-4 rounded-xl border-2 border-secondary bg-secondary/5 cursor-pointer">
                   <div className="flex items-center gap-4">
                     <input
                       type="radio"
                       name="payment"
                       value="razorpay"
-                      checked={paymentMethod === 'razorpay'}
+                      checked={true}
                       readOnly
                       className="w-5 h-5 text-secondary accent-secondary"
                     />
@@ -292,16 +263,13 @@ export default function CheckoutPage() {
                 </label>
               </div>
 
-              {/* Error Message */}
               {error && (
                 <div className="mt-4 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
                   <p className="text-sm text-destructive font-semibold mb-1">⚠️ Order Failed</p>
                   <p className="text-xs text-destructive/80">{error}</p>
-                  <p className="text-xs text-muted-foreground mt-2">Check browser console (F12) for details</p>
                 </div>
               )}
 
-              {/* Pay Button */}
               <button
                 onClick={handlePlaceOrder}
                 disabled={loading}
@@ -317,10 +285,9 @@ export default function CheckoutPage() {
                 )}
               </button>
 
-              {/* Security Badge */}
               <div className="mt-4 flex items-center justify-center gap-2 text-xs text-muted-foreground">
                 <Lock className="w-4 h-4" />
-                <span>Secure mock payment • Real Razorpay coming soon</span>
+                <span>Secure mock payment</span>
               </div>
             </div>
           </div>

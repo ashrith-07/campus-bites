@@ -14,7 +14,6 @@ const createCheckout = async (req, res) => {
       return res.status(400).json({ error: 'Valid total amount is required' });
     }
 
-    // ⭐ Generate mock payment order ID
     const mockOrderId = `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     console.log('[Mock Payment] Order created:', mockOrderId);
@@ -24,7 +23,6 @@ const createCheckout = async (req, res) => {
       orderId: mockOrderId,
       amount: Math.round(totalAmount * 100), // Paise
       currency: 'INR',
-      // Mock Razorpay response structure
       keyId: 'rzp_test_mock'
     });
   } catch (error) {
@@ -38,34 +36,34 @@ const confirmOrder = async (req, res) => {
   try {
     const { totalAmount, items, paymentId, orderId, signature } = req.body;
 
-    console.log('[Confirm Order] Received request:', {
-      totalAmount,
-      itemCount: items?.length,
-      paymentId,
-      orderId,
-      userId: req.user?.id
-    });
+    console.log('[Confirm Order] User ID:', req.user?.id);
+    console.log('[Confirm Order] Items:', items);
+    console.log('[Confirm Order] Total:', totalAmount);
+
+    if (!req.user || !req.user.id) {
+      console.error('❌ User authentication failed - no user ID');
+      return res.status(401).json({ error: 'User authentication failed. Please log in again.' });
+    }
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ error: 'Items are required' });
     }
 
-    // ⭐ Mock payment verification (always succeeds)
     console.log('[Mock Payment] Verifying payment:', paymentId);
     console.log('[Mock Payment] Order ID:', orderId);
 
-    // ✅ FIXED: Removed price field from OrderItem creation
+    // ✅ FIXED: Removed price field from items
     const order = await prisma.order.create({
       data: {
         userId: req.user.id,
         total: parseFloat(totalAmount),
         status: 'PENDING',
-        paymentIntentId: paymentId || orderId, // Store payment reference
+        paymentIntentId: paymentId || orderId,
         items: {
           create: items.map(item => ({
             menuItemId: item.menuItemId,
             quantity: item.quantity
-            // ✅ Removed: price field (not in schema)
+            // ✅ No price field - not in OrderItem schema
           }))
         }
       },
@@ -75,7 +73,7 @@ const confirmOrder = async (req, res) => {
       }
     });
 
-    // ⭐ Emit to user via Socket
+    // Emit to user via Socket
     if (global.emitToUser) {
       global.emitToUser(req.user.id, 'order-update', {
         orderId: order.id,
@@ -90,11 +88,7 @@ const confirmOrder = async (req, res) => {
     res.status(201).json({ success: true, order });
   } catch (error) {
     console.error('Error confirming order:', error);
-    console.error('Error details:', {
-      message: error.message,
-      code: error.code,
-      meta: error.meta
-    });
+    console.error('Error details:', error.message);
     res.status(500).json({ 
       error: 'Failed to confirm order',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
@@ -182,7 +176,7 @@ const updateOrderStatus = async (req, res) => {
       }
     });
 
-    // ⭐ Emit to customer via Socket
+    // Emit to customer via Socket
     const statusMessages = {
       'PENDING': `Your order #${orderId} is pending confirmation`,
       'PROCESSING': `Your order #${orderId} is being prepared! 👨‍🍳`,
@@ -200,7 +194,7 @@ const updateOrderStatus = async (req, res) => {
       });
     }
 
-    console.log(`[Order ${orderId}] Status updated to ${status} by vendor ${req.user.id}`);
+    console.log(`[Order ${orderId}] Status updated to ${status}`);
 
     res.json({ success: true, order: updatedOrder });
   } catch (error) {
