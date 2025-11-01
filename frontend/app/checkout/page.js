@@ -57,6 +57,8 @@ export default function CheckoutPage() {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://campus-bites-server.vercel.app/api';
       
       console.log('Starting checkout...');
+      console.log('Cart items:', cart);
+      console.log('Total:', total);
 
       // Step 1: Create checkout (get mock payment order)
       const checkoutResponse = await fetch(`${API_URL}/orders/checkout`, {
@@ -75,22 +77,26 @@ export default function CheckoutPage() {
         })
       });
 
+      console.log('Checkout response status:', checkoutResponse.status);
+
       const contentType = checkoutResponse.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
         const text = await checkoutResponse.text();
-        console.error('Non-JSON response:', text.substring(0, 200));
+        console.error('Non-JSON checkout response:', text.substring(0, 200));
         throw new Error('Server returned an invalid response. Please try again.');
       }
 
       if (!checkoutResponse.ok) {
         const errorData = await checkoutResponse.json();
+        console.error('Checkout error:', errorData);
         throw new Error(errorData.error || 'Checkout failed');
       }
 
       const checkoutData = await checkoutResponse.json();
-      console.log('Checkout response:', checkoutData);
+      console.log('Checkout successful:', checkoutData);
 
       // ⭐ Step 2: Simulate payment (2 second delay for realism)
+      console.log('Processing mock payment...');
       await new Promise(resolve => setTimeout(resolve, 2000));
 
       // ⭐ Generate mock payment credentials
@@ -100,39 +106,46 @@ export default function CheckoutPage() {
       console.log('Mock payment completed:', mockPaymentId);
 
       // Step 3: Confirm order with mock payment
+      const confirmPayload = {
+        totalAmount: total,
+        items: cart.map(item => ({
+          menuItemId: item.id,
+          quantity: item.quantity,
+          price: item.price
+        })),
+        paymentId: mockPaymentId,
+        orderId: checkoutData.orderId,
+        signature: mockSignature
+      };
+
+      console.log('Confirming order with payload:', confirmPayload);
+
       const confirmResponse = await fetch(`${API_URL}/orders/confirm`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({
-          totalAmount: total,
-          items: cart.map(item => ({
-            menuItemId: item.id,
-            quantity: item.quantity,
-            price: item.price
-          })),
-          paymentId: mockPaymentId,
-          orderId: checkoutData.orderId,
-          signature: mockSignature
-        })
+        body: JSON.stringify(confirmPayload)
       });
+
+      console.log('Confirm response status:', confirmResponse.status);
 
       const confirmContentType = confirmResponse.headers.get('content-type');
       if (!confirmContentType || !confirmContentType.includes('application/json')) {
         const text = await confirmResponse.text();
-        console.error('Non-JSON response:', text.substring(0, 200));
+        console.error('Non-JSON confirm response:', text.substring(0, 200));
         throw new Error('Server returned an invalid response. Please try again.');
       }
 
       if (!confirmResponse.ok) {
         const errorData = await confirmResponse.json();
+        console.error('Confirm error:', errorData);
         throw new Error(errorData.error || 'Failed to confirm order');
       }
 
       const confirmData = await confirmResponse.json();
-      console.log('Order confirmed:', confirmData);
+      console.log('Order confirmed successfully:', confirmData);
 
       // Clear cart and redirect
       clearCart();
@@ -268,8 +281,8 @@ export default function CheckoutPage() {
                         <CreditCard className="w-5 h-5 text-white" />
                       </div>
                       <div>
-                        <p className="font-semibold text-foreground">Pay on Pickup</p>
-                        <p className="text-xs text-muted-foreground">Cash or Card at counter</p>
+                        <p className="font-semibold text-foreground">Razorpay (Mock)</p>
+                        <p className="text-xs text-muted-foreground">Cards, UPI, Wallets & More</p>
                       </div>
                     </div>
                   </div>
@@ -282,11 +295,12 @@ export default function CheckoutPage() {
               {/* Error Message */}
               {error && (
                 <div className="mt-4 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
-                  <p className="text-sm text-destructive">{error}</p>
+                  <p className="text-sm text-destructive font-semibold">{error}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Check console for details</p>
                 </div>
               )}
 
-              {/* Place Order Button */}
+              {/* Pay Button */}
               <button
                 onClick={handlePlaceOrder}
                 disabled={loading}
@@ -295,17 +309,17 @@ export default function CheckoutPage() {
                 {loading ? (
                   <span className="flex items-center justify-center gap-2">
                     <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
-                    Processing...
+                    Processing Payment...
                   </span>
                 ) : (
-                  `Place Order - ₹${total.toFixed(2)}`
+                  `Pay ₹${total.toFixed(2)}`
                 )}
               </button>
 
               {/* Security Badge */}
               <div className="mt-4 flex items-center justify-center gap-2 text-xs text-muted-foreground">
                 <Lock className="w-4 h-4" />
-                <span>Secure ordering system</span>
+                <span>Secure mock payment • Real Razorpay coming soon</span>
               </div>
             </div>
           </div>
