@@ -1,10 +1,9 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, CreditCard, Banknote, MapPin, Clock, Lock } from 'lucide-react';
+import { ArrowLeft, CreditCard, Clock, Lock, MapPin } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { api } from '@/lib/api';
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -16,16 +15,13 @@ export default function CheckoutPage() {
   const [initializing, setInitializing] = useState(true);
 
   useEffect(() => {
-    // Wait for auth to load
     if (authLoading) return;
 
-    // Redirect if not logged in
     if (!token) {
       router.push('/auth/login');
       return;
     }
 
-    // Redirect if cart is empty
     if (cart.length === 0) {
       router.push('/');
       return;
@@ -34,7 +30,6 @@ export default function CheckoutPage() {
     setInitializing(false);
   }, [token, cart, router, authLoading]);
 
-  // Show loading while checking auth/cart
   if (authLoading || initializing) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -46,7 +41,6 @@ export default function CheckoutPage() {
     );
   }
 
-  // Don't render if redirecting
   if (!token || cart.length === 0) {
     return null;
   }
@@ -55,76 +49,64 @@ export default function CheckoutPage() {
   const gst = subtotal * 0.05;
   const total = subtotal + gst;
 
-const handlePlaceOrder = async () => {
-  try {
-    setLoading(true);
-    setError('');
-    
-    console.log('Starting checkout...');
-    
-    // Step 1: Initiate checkout
-    const checkoutResponse = await fetch('https://campus-bites-server.vercel.app/api/orders/checkout', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({
-        totalAmount: total,
-        items: cart.map(item => ({
-          menuItemId: item.id,
-          quantity: item.quantity
-        }))
-      })
-    });
-    
-    if (!checkoutResponse.ok) {
-      const errorData = await checkoutResponse.json();
-      throw new Error(errorData.error || 'Checkout failed');
+  const handlePlaceOrder = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://campus-bites-server.vercel.app/api';
+      
+      console.log('Placing order...', { cart, total });
+
+      // ⭐ Direct order creation (no checkout/confirm flow)
+      const response = await fetch(`${API_URL}/orders`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          items: cart.map(item => ({
+            menuItemId: item.id,
+            quantity: item.quantity,
+            price: item.price
+          })),
+          total: total,
+          paymentMethod: paymentMethod
+        })
+      });
+
+      console.log('Response status:', response.status);
+
+      // ⭐ Check content type before parsing
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('Non-JSON response:', text.substring(0, 200));
+        throw new Error('Server returned an invalid response. Please try again.');
+      }
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to place order');
+      }
+
+      console.log('Order created:', data);
+
+      // Clear cart and redirect
+      clearCart();
+      
+      // Use replace to prevent back button issues
+      router.replace(`/order-tracking?orderId=${data.order.id}`);
+      
+    } catch (error) {
+      console.error('Order placement error:', error);
+      setError(error.message || 'Failed to place order. Please try again.');
+    } finally {
+      setLoading(false);
     }
-    
-    const checkoutData = await checkoutResponse.json();
-    console.log('Checkout response:', checkoutData);
-    
-    // Step 2: Confirm order
-    const confirmResponse = await fetch('https://campus-bites-server.vercel.app/api/orders/confirm', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({
-        totalAmount: total,
-        items: cart.map(item => ({
-          menuItemId: item.id,
-          quantity: item.quantity
-        })),
-        paymentIntentId: checkoutData.mockPaymentIntentId
-      })
-    });
-    
-    if (!confirmResponse.ok) {
-      const errorData = await confirmResponse.json();
-      throw new Error(errorData.error || 'Failed to confirm order');
-    }
-    
-    const confirmData = await confirmResponse.json();
-    console.log('Confirm response:', confirmData);
-    
-    const orderId = confirmData.order.id;
-    console.log('Order ID:', orderId);
-    
-    // DON'T clear cart here - order-success page will do it
-    // Use replace instead of push to prevent back button issues
-    router.replace(`/order-success?orderId=${orderId}`);
-    
-  } catch (error) {
-    console.error('Order placement error:', error);
-    setError(error.message || 'Failed to place order. Please try again.');
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -240,7 +222,7 @@ const handlePlaceOrder = async () => {
                       name="payment"
                       value="razorpay"
                       checked={paymentMethod === 'razorpay'}
-                      onChange={(e) => setPaymentMethod(e.target.value)}
+                      readOnly
                       className="w-5 h-5 text-secondary accent-secondary"
                     />
                     <div className="flex items-center gap-3">
@@ -248,8 +230,8 @@ const handlePlaceOrder = async () => {
                         <CreditCard className="w-5 h-5 text-white" />
                       </div>
                       <div>
-                        <p className="font-semibold text-foreground">Razorpay</p>
-                        <p className="text-xs text-muted-foreground">Cards, UPI, Wallets & More</p>
+                        <p className="font-semibold text-foreground">Pay on Pickup</p>
+                        <p className="text-xs text-muted-foreground">Cash or Card at counter</p>
                       </div>
                     </div>
                   </div>
@@ -257,8 +239,6 @@ const handlePlaceOrder = async () => {
                     Recommended
                   </span>
                 </label>
-
-               
               </div>
 
               {/* Error Message */}
@@ -268,7 +248,7 @@ const handlePlaceOrder = async () => {
                 </div>
               )}
 
-              {/* Pay Button */}
+              {/* Place Order Button */}
               <button
                 onClick={handlePlaceOrder}
                 disabled={loading}
@@ -280,14 +260,14 @@ const handlePlaceOrder = async () => {
                     Processing...
                   </span>
                 ) : (
-                  `Pay ₹${total.toFixed(2)}`
+                  `Place Order - ₹${total.toFixed(2)}`
                 )}
               </button>
 
               {/* Security Badge */}
               <div className="mt-4 flex items-center justify-center gap-2 text-xs text-muted-foreground">
                 <Lock className="w-4 h-4" />
-                <span>Secure payment powered by Razorpay</span>
+                <span>Secure ordering system</span>
               </div>
             </div>
           </div>

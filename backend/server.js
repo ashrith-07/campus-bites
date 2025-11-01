@@ -44,11 +44,17 @@ app.use(express.json());
 // ⭐ Socket.IO setup
 const io = new Server(httpServer, {
   cors: {
-    origin: 'https://campus-bites-web.vercel.app',
+    origin: allowedOrigins,
     methods: ['GET', 'POST'],
     credentials: true
   },
-  transports: ['websocket', 'polling']
+  transports: ['websocket', 'polling'], // ⭐ Try both, fallback to polling
+  allowEIO3: true,
+  pingTimeout: 60000,
+  pingInterval: 25000,
+  upgradeTimeout: 10000,
+  maxHttpBufferSize: 1e6,
+  perMessageDeflate: false // Disable compression for better Vercel compatibility
 });
 
 // Store connected clients

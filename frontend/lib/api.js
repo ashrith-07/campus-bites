@@ -58,18 +58,6 @@ export const api = {
   
   getMenuItem: (id) => apiFetch(`/menu/items/${id}`),
 
-  checkout: (totalAmount, items) =>
-    apiFetch('/orders/checkout', {
-      method: 'POST',
-      body: JSON.stringify({ totalAmount, items }),
-    }),
-
-  confirmOrder: (totalAmount, items, paymentIntentId) =>
-    apiFetch('/orders/confirm', {
-      method: 'POST',
-      body: JSON.stringify({ totalAmount, items, paymentIntentId }),
-    }),
-
   getOrders: () => apiFetch('/orders'),
 
   getOrder: (id) => apiFetch(`/orders/${id}`),

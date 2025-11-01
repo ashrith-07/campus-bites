@@ -53,13 +53,21 @@ export function SocketProvider({ children }) {
       return;
     }
 
+    // ⭐ Get base URL without /api for socket connection
+    const SOCKET_URL = API_URL.replace('/api', '');
+
     // Connect to Socket.IO server
-    const socket = io(API_URL, {
+    // ⭐ Try WebSocket first, fallback to polling automatically
+    const socket = io(SOCKET_URL, {
       auth: { token },
-      transports: ['websocket', 'polling'],
+      transports: ['websocket', 'polling'], // Try WebSocket first
       reconnection: true,
       reconnectionDelay: 1000,
-      reconnectionAttempts: 5
+      reconnectionDelayMax: 5000,
+      reconnectionAttempts: 3, // Limit attempts to reduce console spam
+      timeout: 10000,
+      upgrade: true, // Allow upgrade from polling to WebSocket
+      rememberUpgrade: true
     });
 
     socketRef.current = socket;
