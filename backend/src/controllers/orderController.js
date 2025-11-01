@@ -38,6 +38,14 @@ const confirmOrder = async (req, res) => {
   try {
     const { totalAmount, items, paymentId, orderId, signature } = req.body;
 
+    console.log('[Confirm Order] Received request:', {
+      totalAmount,
+      itemCount: items?.length,
+      paymentId,
+      orderId,
+      userId: req.user?.id
+    });
+
     if (!items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ error: 'Items are required' });
     }
@@ -46,7 +54,7 @@ const confirmOrder = async (req, res) => {
     console.log('[Mock Payment] Verifying payment:', paymentId);
     console.log('[Mock Payment] Order ID:', orderId);
 
-    // Create order in database
+    // ✅ FIXED: Removed price field from OrderItem creation
     const order = await prisma.order.create({
       data: {
         userId: req.user.id,
@@ -56,8 +64,8 @@ const confirmOrder = async (req, res) => {
         items: {
           create: items.map(item => ({
             menuItemId: item.menuItemId,
-            quantity: item.quantity,
-            price: parseFloat(item.price || 0)
+            quantity: item.quantity
+            // ✅ Removed: price field (not in schema)
           }))
         }
       },
@@ -82,7 +90,15 @@ const confirmOrder = async (req, res) => {
     res.status(201).json({ success: true, order });
   } catch (error) {
     console.error('Error confirming order:', error);
-    res.status(500).json({ error: 'Failed to confirm order' });
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      meta: error.meta
+    });
+    res.status(500).json({ 
+      error: 'Failed to confirm order',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 };
 

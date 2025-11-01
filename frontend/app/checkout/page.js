@@ -107,16 +107,16 @@ export default function CheckoutPage() {
 
       // Step 3: Confirm order with mock payment
       const confirmPayload = {
-        totalAmount: total,
-        items: cart.map(item => ({
-          menuItemId: item.id,
-          quantity: item.quantity,
-          price: item.price
-        })),
-        paymentId: mockPaymentId,
-        orderId: checkoutData.orderId,
-        signature: mockSignature
-      };
+      totalAmount: total,
+      items: cart.map(item => ({
+        menuItemId: item.id,
+        quantity: item.quantity
+        // Remove: price: item.price
+      })),
+      paymentId: mockPaymentId,
+      orderId: checkoutData.orderId,
+      signature: mockSignature
+    };
 
       console.log('Confirming order with payload:', confirmPayload);
 
