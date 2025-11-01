@@ -56,9 +56,9 @@ export default function CheckoutPage() {
       
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://campus-bites-server.vercel.app/api';
       
-      console.log('Starting checkout...');
-      console.log('Cart items:', cart);
-      console.log('Total:', total);
+      console.log('🚀 Starting checkout...');
+      console.log('📦 Cart items:', cart);
+      console.log('💰 Total:', total);
 
       // Step 1: Create checkout (get mock payment order)
       const checkoutResponse = await fetch(`${API_URL}/orders/checkout`, {
@@ -71,54 +71,54 @@ export default function CheckoutPage() {
           totalAmount: total,
           items: cart.map(item => ({
             menuItemId: item.id,
-            quantity: item.quantity,
-            price: item.price
+            quantity: item.quantity
+            // ✅ REMOVED: price field (not in Prisma schema)
           }))
         })
       });
 
-      console.log('Checkout response status:', checkoutResponse.status);
+      console.log('✅ Checkout response status:', checkoutResponse.status);
 
       const contentType = checkoutResponse.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
         const text = await checkoutResponse.text();
-        console.error('Non-JSON checkout response:', text.substring(0, 200));
+        console.error('❌ Non-JSON checkout response:', text.substring(0, 200));
         throw new Error('Server returned an invalid response. Please try again.');
       }
 
       if (!checkoutResponse.ok) {
         const errorData = await checkoutResponse.json();
-        console.error('Checkout error:', errorData);
+        console.error('❌ Checkout error:', errorData);
         throw new Error(errorData.error || 'Checkout failed');
       }
 
       const checkoutData = await checkoutResponse.json();
-      console.log('Checkout successful:', checkoutData);
+      console.log('✅ Checkout successful:', checkoutData);
 
-      // ⭐ Step 2: Simulate payment (2 second delay for realism)
-      console.log('Processing mock payment...');
+      // Step 2: Simulate payment (2 second delay for realism)
+      console.log('💳 Processing mock payment...');
       await new Promise(resolve => setTimeout(resolve, 2000));
 
-      // ⭐ Generate mock payment credentials
+      // Generate mock payment credentials
       const mockPaymentId = `pay_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const mockSignature = `sig_${Math.random().toString(36).substr(2, 16)}`;
 
-      console.log('Mock payment completed:', mockPaymentId);
+      console.log('✅ Mock payment completed:', mockPaymentId);
 
       // Step 3: Confirm order with mock payment
       const confirmPayload = {
-      totalAmount: total,
-      items: cart.map(item => ({
-        menuItemId: item.id,
-        quantity: item.quantity
-        // Remove: price: item.price
-      })),
-      paymentId: mockPaymentId,
-      orderId: checkoutData.orderId,
-      signature: mockSignature
-    };
+        totalAmount: total,
+        items: cart.map(item => ({
+          menuItemId: item.id,
+          quantity: item.quantity
+          // ✅ REMOVED: price field (not in Prisma schema)
+        })),
+        paymentId: mockPaymentId,
+        orderId: checkoutData.orderId,
+        signature: mockSignature
+      };
 
-      console.log('Confirming order with payload:', confirmPayload);
+      console.log('📤 Confirming order with payload:', confirmPayload);
 
       const confirmResponse = await fetch(`${API_URL}/orders/confirm`, {
         method: 'POST',
@@ -129,30 +129,30 @@ export default function CheckoutPage() {
         body: JSON.stringify(confirmPayload)
       });
 
-      console.log('Confirm response status:', confirmResponse.status);
+      console.log('📥 Confirm response status:', confirmResponse.status);
 
       const confirmContentType = confirmResponse.headers.get('content-type');
       if (!confirmContentType || !confirmContentType.includes('application/json')) {
         const text = await confirmResponse.text();
-        console.error('Non-JSON confirm response:', text.substring(0, 200));
+        console.error('❌ Non-JSON confirm response:', text.substring(0, 500));
         throw new Error('Server returned an invalid response. Please try again.');
       }
 
       if (!confirmResponse.ok) {
         const errorData = await confirmResponse.json();
-        console.error('Confirm error:', errorData);
-        throw new Error(errorData.error || 'Failed to confirm order');
+        console.error('❌ Confirm error:', errorData);
+        throw new Error(errorData.error || errorData.details || 'Failed to confirm order');
       }
 
       const confirmData = await confirmResponse.json();
-      console.log('Order confirmed successfully:', confirmData);
+      console.log('✅ Order confirmed successfully:', confirmData);
 
       // Clear cart and redirect
       clearCart();
       router.replace(`/order-success?orderId=${confirmData.order.id}`);
       
     } catch (error) {
-      console.error('Order placement error:', error);
+      console.error('❌ Order placement error:', error);
       setError(error.message || 'Failed to place order. Please try again.');
     } finally {
       setLoading(false);
@@ -294,9 +294,10 @@ export default function CheckoutPage() {
 
               {/* Error Message */}
               {error && (
-                <div className="mt-4 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
-                  <p className="text-sm text-destructive font-semibold">{error}</p>
-                  <p className="text-xs text-muted-foreground mt-1">Check console for details</p>
+                <div className="mt-4 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+                  <p className="text-sm text-destructive font-semibold mb-1">⚠️ Order Failed</p>
+                  <p className="text-xs text-destructive/80">{error}</p>
+                  <p className="text-xs text-muted-foreground mt-2">Check browser console (F12) for details</p>
                 </div>
               )}
 
