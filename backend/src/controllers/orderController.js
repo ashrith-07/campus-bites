@@ -1,27 +1,63 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-// Create order
-const createOrder = async (req, res) => {
+// Create checkout (mock payment initialization)
+const createCheckout = async (req, res) => {
   try {
-    const { items, total, deliveryAddress, paymentMethod } = req.body;
+    const { totalAmount, items } = req.body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ error: 'Items are required' });
     }
 
+    if (!totalAmount || totalAmount <= 0) {
+      return res.status(400).json({ error: 'Valid total amount is required' });
+    }
+
+    // ⭐ Generate mock payment order ID
+    const mockOrderId = `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+    console.log('[Mock Payment] Order created:', mockOrderId);
+
+    res.json({
+      success: true,
+      orderId: mockOrderId,
+      amount: Math.round(totalAmount * 100), // Paise
+      currency: 'INR',
+      // Mock Razorpay response structure
+      keyId: 'rzp_test_mock'
+    });
+  } catch (error) {
+    console.error('Error creating checkout:', error);
+    res.status(500).json({ error: 'Failed to create checkout' });
+  }
+};
+
+// Confirm order (mock payment verification)
+const confirmOrder = async (req, res) => {
+  try {
+    const { totalAmount, items, paymentId, orderId, signature } = req.body;
+
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ error: 'Items are required' });
+    }
+
+    // ⭐ Mock payment verification (always succeeds)
+    console.log('[Mock Payment] Verifying payment:', paymentId);
+    console.log('[Mock Payment] Order ID:', orderId);
+
+    // Create order in database
     const order = await prisma.order.create({
       data: {
         userId: req.user.id,
-        total: parseFloat(total),
+        total: parseFloat(totalAmount),
         status: 'PENDING',
-        deliveryAddress: deliveryAddress || null,
-        paymentMethod: paymentMethod || 'CASH',
+        paymentIntentId: paymentId || orderId, // Store payment reference
         items: {
           create: items.map(item => ({
             menuItemId: item.menuItemId,
             quantity: item.quantity,
-            price: parseFloat(item.price)
+            price: parseFloat(item.price || 0)
           }))
         }
       },
@@ -41,10 +77,12 @@ const createOrder = async (req, res) => {
       });
     }
 
+    console.log('[Order] Created successfully:', order.id);
+
     res.status(201).json({ success: true, order });
   } catch (error) {
-    console.error('Error creating order:', error);
-    res.status(500).json({ error: 'Failed to create order' });
+    console.error('Error confirming order:', error);
+    res.status(500).json({ error: 'Failed to confirm order' });
   }
 };
 
@@ -196,7 +234,8 @@ const deleteOrder = async (req, res) => {
 };
 
 module.exports = {
-  createOrder,
+  createCheckout,
+  confirmOrder,
   getAllOrders,
   getOrderById,
   updateOrderStatus,

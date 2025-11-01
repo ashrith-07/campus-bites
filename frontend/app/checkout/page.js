@@ -56,49 +56,87 @@ export default function CheckoutPage() {
       
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://campus-bites-server.vercel.app/api';
       
-      console.log('Placing order...', { cart, total });
+      console.log('Starting checkout...');
 
-      // ⭐ Direct order creation (no checkout/confirm flow)
-      const response = await fetch(`${API_URL}/orders`, {
+      // Step 1: Create checkout (get mock payment order)
+      const checkoutResponse = await fetch(`${API_URL}/orders/checkout`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
+          totalAmount: total,
+          items: cart.map(item => ({
+            menuItemId: item.id,
+            quantity: item.quantity,
+            price: item.price
+          }))
+        })
+      });
+
+      const contentType = checkoutResponse.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await checkoutResponse.text();
+        console.error('Non-JSON response:', text.substring(0, 200));
+        throw new Error('Server returned an invalid response. Please try again.');
+      }
+
+      if (!checkoutResponse.ok) {
+        const errorData = await checkoutResponse.json();
+        throw new Error(errorData.error || 'Checkout failed');
+      }
+
+      const checkoutData = await checkoutResponse.json();
+      console.log('Checkout response:', checkoutData);
+
+      // ⭐ Step 2: Simulate payment (2 second delay for realism)
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // ⭐ Generate mock payment credentials
+      const mockPaymentId = `pay_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const mockSignature = `sig_${Math.random().toString(36).substr(2, 16)}`;
+
+      console.log('Mock payment completed:', mockPaymentId);
+
+      // Step 3: Confirm order with mock payment
+      const confirmResponse = await fetch(`${API_URL}/orders/confirm`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          totalAmount: total,
           items: cart.map(item => ({
             menuItemId: item.id,
             quantity: item.quantity,
             price: item.price
           })),
-          total: total,
-          paymentMethod: paymentMethod
+          paymentId: mockPaymentId,
+          orderId: checkoutData.orderId,
+          signature: mockSignature
         })
       });
 
-      console.log('Response status:', response.status);
-
-      // ⭐ Check content type before parsing
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const text = await response.text();
+      const confirmContentType = confirmResponse.headers.get('content-type');
+      if (!confirmContentType || !confirmContentType.includes('application/json')) {
+        const text = await confirmResponse.text();
         console.error('Non-JSON response:', text.substring(0, 200));
         throw new Error('Server returned an invalid response. Please try again.');
       }
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to place order');
+      if (!confirmResponse.ok) {
+        const errorData = await confirmResponse.json();
+        throw new Error(errorData.error || 'Failed to confirm order');
       }
 
-      console.log('Order created:', data);
+      const confirmData = await confirmResponse.json();
+      console.log('Order confirmed:', confirmData);
 
       // Clear cart and redirect
       clearCart();
-      
-      // Use replace to prevent back button issues
-      router.replace(`/order-tracking?orderId=${data.order.id}`);
+      router.replace(`/order-success?orderId=${confirmData.order.id}`);
       
     } catch (error) {
       console.error('Order placement error:', error);
