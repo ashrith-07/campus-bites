@@ -5,14 +5,22 @@ const prisma = new PrismaClient();
 const createCheckout = async (req, res) => {
   try {
     const { totalAmount, items } = req.body;
+    
+    // Validate user is authenticated
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
     if (!items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ error: 'Items are required' });
     }
     if (!totalAmount || totalAmount <= 0) {
       return res.status(400).json({ error: 'Valid total amount is required' });
     }
+
     const mockOrderId = `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    console.log('[Mock Payment] Order created:', mockOrderId);
+    console.log('[Mock Payment] Order created:', mockOrderId, 'for user:', req.user.id);
+
     res.json({
       success: true,
       orderId: mockOrderId,
@@ -31,46 +39,56 @@ const confirmOrder = async (req, res) => {
   try {
     const { totalAmount, items, paymentId, orderId } = req.body;
 
+    // CRITICAL: Validate user authentication
+    if (!req.user || !req.user.id) {
+      console.error('[Order] User not authenticated - req.user:', req.user);
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
+    const userId = req.user.id; // Use id, not userId
+    console.log('[Order] Confirming order for user:', userId);
+
     if (!items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ error: 'Items are required' });
     }
 
-    // ⭐ THIS IS THE FIXED CODE BLOCK
+    if (!totalAmount || totalAmount <= 0) {
+      return res.status(400).json({ error: 'Valid total amount is required' });
+    }
+
+    // Create the order
     const order = await prisma.order.create({
       data: {
+        userId: userId, // Use the validated userId
         total: parseFloat(totalAmount),
         status: 'PENDING',
         paymentIntentId: paymentId || orderId,
-        
-        // ⭐ FIX 1: Connect the user
-        user: {
-          connect: {
-            id: req.user.userId // Use req.user.userId (from your token)
-          }
-        },
-        
-        // ⭐ FIX 2: Connect the menu items
         items: {
           create: items.map(item => ({
-            quantity: item.quantity,
-            price: parseFloat(item.price || 0),
-            menuItem: {
-              connect: {
-                id: parseInt(item.menuItemId) // Parse the ID just in case
-              }
-            }
+            menuItemId: parseInt(item.menuItemId),
+            quantity: parseInt(item.quantity)
           }))
         }
       },
       include: {
-        items: { include: { menuItem: true } },
-        user: { select: { id: true, name: true, email: true } }
+        items: { 
+          include: { 
+            menuItem: true 
+          } 
+        },
+        user: { 
+          select: { 
+            id: true, 
+            name: true, 
+            email: true 
+          } 
+        }
       }
     });
 
-    // ⭐ FIX 3: Emit to user via Socket
+    // Emit socket notification if available
     if (global.emitToUser) {
-      global.emitToUser(req.user.userId, 'order-update', {
+      global.emitToUser(userId, 'order-update', {
         orderId: order.id,
         status: 'PENDING',
         message: `Your order #${order.id} has been placed successfully!`,
@@ -78,30 +96,47 @@ const confirmOrder = async (req, res) => {
       });
     }
 
-    console.log('[Order] Created successfully:', order.id);
+    console.log('[Order] Created successfully:', order.id, 'for user:', userId);
     res.status(201).json({ success: true, order });
   } catch (error) {
     console.error('Error confirming order:', error);
-    res.status(500).json({ error: 'Failed to confirm order' });
+    res.status(500).json({ 
+      error: 'Failed to confirm order',
+      details: error.message 
+    });
   }
 };
 
 // Get all orders
 const getAllOrders = async (req, res) => {
   try {
-    // ⭐ FIX 4: Use req.user.userId
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
     const whereClause = req.user.role === 'VENDOR' 
       ? {} 
-      : { userId: req.user.userId };
+      : { userId: req.user.id };
 
     const orders = await prisma.order.findMany({
       where: whereClause,
       include: {
-        items: { include: { menuItem: true } },
-        user: { select: { id: true, name: true, email: true } }
+        items: { 
+          include: { 
+            menuItem: true 
+          } 
+        },
+        user: { 
+          select: { 
+            id: true, 
+            name: true, 
+            email: true 
+          } 
+        }
       },
       orderBy: { createdAt: 'desc' }
     });
+
     res.json({ orders });
   } catch (error) {
     console.error('Error fetching orders:', error);
@@ -112,21 +147,38 @@ const getAllOrders = async (req, res) => {
 // Get order by ID
 const getOrderById = async (req, res) => {
   try {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
     const orderId = parseInt(req.params.id);
     const order = await prisma.order.findUnique({
       where: { id: orderId },
       include: {
-        items: { include: { menuItem: true } },
-        user: { select: { id: true, name: true, email: true } }
+        items: { 
+          include: { 
+            menuItem: true 
+          } 
+        },
+        user: { 
+          select: { 
+            id: true, 
+            name: true, 
+            email: true 
+          } 
+        }
       }
     });
+
     if (!order) {
       return res.status(404).json({ error: 'Order not found' });
     }
-    // ⭐ FIX 5: Use req.user.userId
-    if (req.user.role !== 'VENDOR' && order.userId !== req.user.userId) {
+
+    // Check authorization
+    if (req.user.role !== 'VENDOR' && order.userId !== req.user.id) {
       return res.status(403).json({ error: 'Unauthorized to view this order' });
     }
+
     res.json({ order });
   } catch (error) {
     console.error('Error fetching order:', error);
@@ -137,27 +189,54 @@ const getOrderById = async (req, res) => {
 // Update order status
 const updateOrderStatus = async (req, res) => {
   try {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
     const orderId = parseInt(req.params.id);
     const { status } = req.body;
+
     const validStatuses = ['PENDING', 'PROCESSING', 'READY', 'COMPLETED', 'CANCELLED'];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ error: 'Invalid status', validStatuses });
     }
+
     const existingOrder = await prisma.order.findUnique({
       where: { id: orderId },
-      include: { user: { select: { id: true, name: true, email: true } } }
+      include: { 
+        user: { 
+          select: { 
+            id: true, 
+            name: true, 
+            email: true 
+          } 
+        } 
+      }
     });
+
     if (!existingOrder) {
       return res.status(404).json({ error: 'Order not found' });
     }
+
     const updatedOrder = await prisma.order.update({
       where: { id: orderId },
       data: { status },
       include: {
-        items: { include: { menuItem: true } },
-        user: { select: { id: true, name: true, email: true } }
+        items: { 
+          include: { 
+            menuItem: true 
+          } 
+        },
+        user: { 
+          select: { 
+            id: true, 
+            name: true, 
+            email: true 
+          } 
+        }
       }
     });
+
     const statusMessages = {
       'PENDING': `Your order #${orderId} is pending confirmation`,
       'PROCESSING': `Your order #${orderId} is being prepared! 👨‍🍳`,
@@ -165,6 +244,7 @@ const updateOrderStatus = async (req, res) => {
       'COMPLETED': `Your order #${orderId} has been completed. Thank you!`,
       'CANCELLED': `Your order #${orderId} has been cancelled`
     };
+
     if (global.emitToUser) {
       global.emitToUser(existingOrder.userId, 'order-update', {
         orderId,
@@ -173,8 +253,8 @@ const updateOrderStatus = async (req, res) => {
         timestamp: new Date().toISOString()
       });
     }
-    // ⭐ FIX 6: Use req.user.userId
-    console.log(`[Order ${orderId}] Status updated to ${status} by vendor ${req.user.userId}`);
+
+    console.log(`[Order ${orderId}] Status updated to ${status} by vendor ${req.user.id}`);
     res.json({ success: true, order: updatedOrder });
   } catch (error) {
     console.error('Error updating order:', error);
@@ -185,22 +265,31 @@ const updateOrderStatus = async (req, res) => {
 // Delete order
 const deleteOrder = async (req, res) => {
   try {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
     const orderId = parseInt(req.params.id);
     const order = await prisma.order.findUnique({
       where: { id: orderId }
     });
+
     if (!order) {
       return res.status(404).json({ error: 'Order not found' });
     }
-    // ⭐ FIX 7: Use req.user.userId
-    if (req.user.role !== 'VENDOR' && order.userId !== req.user.userId) {
+
+    // Check authorization
+    if (req.user.role !== 'VENDOR' && order.userId !== req.user.id) {
       return res.status(403).json({ error: 'Unauthorized to delete this order' });
     }
+
     if (order.status === 'COMPLETED') {
       return res.status(400).json({ error: 'Cannot delete completed orders' });
     }
+
     await prisma.orderItem.deleteMany({ where: { orderId } });
     await prisma.order.delete({ where: { id: orderId } });
+
     if (req.user.role === 'VENDOR' && global.emitToUser) {
       global.emitToUser(order.userId, 'order-update', {
         orderId,
@@ -209,6 +298,7 @@ const deleteOrder = async (req, res) => {
         timestamp: new Date().toISOString()
       });
     }
+
     res.json({ success: true, message: 'Order deleted successfully' });
   } catch (error) {
     console.error('Error deleting order:', error);

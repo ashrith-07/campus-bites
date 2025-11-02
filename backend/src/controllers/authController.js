@@ -29,10 +29,14 @@ const signup = async (req, res) => {
 
 
     const token = jwt.sign(
-      { userId: user.id, role: user.role }, 
-      JWT_SECRET, 
-      { expiresIn: '7d' }
-    );
+  { 
+    id: user.id,  // or userId: user.id - must match what auth middleware expects
+    email: user.email,
+    role: user.role 
+  },
+  process.env.JWT_SECRET,
+  { expiresIn: '7d' }
+);
 
     res.status(201).json({ 
       message: 'User registered and logged in successfully.',
@@ -81,10 +85,14 @@ const login = async (req, res) => {
 
     
     const token = jwt.sign(
-      { userId: user.id, role: user.role }, 
-      JWT_SECRET, 
-      { expiresIn: '7d' } 
-    );
+  { 
+    id: user.id,  // or userId: user.id - must match what auth middleware expects
+    email: user.email,
+    role: user.role 
+  },
+  process.env.JWT_SECRET,
+  { expiresIn: '7d' }
+);
     
 
     const userResponse = { id: user.id, email: user.email, name: user.name, role: user.role };
