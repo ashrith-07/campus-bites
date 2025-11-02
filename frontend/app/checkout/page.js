@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, CreditCard, Clock, Lock, MapPin } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
@@ -13,6 +13,9 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [initializing, setInitializing] = useState(true);
+  
+  // ⭐ FIX: Track if order was successfully placed
+  const orderPlacedRef = useRef(false);
 
   useEffect(() => {
     if (authLoading) return;
@@ -22,7 +25,8 @@ export default function CheckoutPage() {
       return;
     }
 
-    if (cart.length === 0) {
+    // ⭐ FIX: Don't redirect to home if order was placed successfully
+    if (cart.length === 0 && !orderPlacedRef.current) {
       router.push('/');
       return;
     }
@@ -41,7 +45,8 @@ export default function CheckoutPage() {
     );
   }
 
-  if (!token || cart.length === 0) {
+  // ⭐ FIX: Allow rendering if order was placed
+  if (!token || (cart.length === 0 && !orderPlacedRef.current)) {
     return null;
   }
 
@@ -90,10 +95,10 @@ export default function CheckoutPage() {
       const checkoutData = await checkoutResponse.json();
       console.log('Checkout response:', checkoutData);
 
-      // ⭐ Step 2: Simulate payment (2 second delay for realism)
+      // Step 2: Simulate payment (2 second delay for realism)
       await new Promise(resolve => setTimeout(resolve, 2000));
 
-      // ⭐ Generate mock payment credentials
+      // Generate mock payment credentials
       const mockPaymentId = `pay_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const mockSignature = `sig_${Math.random().toString(36).substr(2, 16)}`;
 
@@ -134,16 +139,21 @@ export default function CheckoutPage() {
       const confirmData = await confirmResponse.json();
       console.log('Order confirmed:', confirmData);
 
+      // ⭐ FIX: Mark order as placed before clearing cart
+      orderPlacedRef.current = true;
+
       // Clear cart and redirect
       clearCart();
-      router.replace(`/order-success?orderId=${confirmData.order.id}`);
+      
+      // ⭐ FIX: Use push instead of replace to allow back navigation
+      router.push(`/order-success?orderId=${confirmData.order.id}`);
       
     } catch (error) {
       console.error('Order placement error:', error);
       setError(error.message || 'Failed to place order. Please try again.');
-    } finally {
       setLoading(false);
     }
+    // ⭐ FIX: Don't set loading to false here - let the page unmount
   };
 
   return (
