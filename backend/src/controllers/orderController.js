@@ -55,9 +55,14 @@ const confirmOrder = async (req, res) => {
         paymentIntentId: paymentId || orderId, // Store payment reference
         items: {
           create: items.map(item => ({
-            menuItemId: item.menuItemId,
             quantity: item.quantity,
-            price: parseFloat(item.price || 0)
+            price: parseFloat(item.price || 0),
+            // ⭐ This is the new, robust way to connect the relation
+            menuItem: {
+              connect: {
+                id: parseInt(item.menuItemId) // Connect to an existing MenuItem by its ID
+              }
+            }
           }))
         }
       },
@@ -66,7 +71,6 @@ const confirmOrder = async (req, res) => {
         user: { select: { id: true, name: true, email: true } }
       }
     });
-
     // ⭐ Emit to user via Socket
     if (global.emitToUser) {
       global.emitToUser(req.user.id, 'order-update', {
