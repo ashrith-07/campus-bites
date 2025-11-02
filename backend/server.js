@@ -20,18 +20,19 @@ const httpServer = createServer(app);
 const PORT = process.env.PORT || 3001;
 
 // ⭐ CORS configuration
-const allowedOrigins = [
-  'https://campus-bites-web.vercel.app',
-  'https://campus-bites-server.vercel.app',
-  'http://localhost:3000',
-  'http://localhost:3001'
-];
+const allowedOrigins = 'https://campus-bites-web.vercel.app'
+// [
+  // 'https://campus-bites-web.vercel.app',
+  // 'https://campus-bites-server.vercel.app',
+  // 'http://localhost:3000',
+  // 'http://localhost:3001'
+// ];
 
 app.use(cors({
     origin: function (origin, callback) {
       // Allow requests with no origin (like mobile apps or curl requests)
       if (!origin) return callback(null, true);
-      if (allowedOrigins.indexOf(origin) === -1) {
+      if (origin !== allowedOrigins) {
         return callback(new Error('CORS policy violation'), false);
       }
       return callback(null, true);
