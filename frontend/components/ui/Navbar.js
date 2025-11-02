@@ -1,5 +1,5 @@
 'use client';
-import { Search, Bell, ShoppingCart, User, Menu, X, LayoutDashboard } from 'lucide-react';
+import { Search, Bell, ShoppingCart, User, Menu, X, LayoutDashboard, BellOff } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
 import { useSocket } from '@/contexts/SocketContext';
@@ -15,12 +15,19 @@ export default function Navbar() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [notificationPermission, setNotificationPermission] = useState('default');
   
-  // ⭐ Refs for click outside detection
   const notificationRef = useRef(null);
   const mobileMenuRef = useRef(null);
 
-  // ⭐ Close dropdowns when clicking outside
+  // ⭐ Check notification permission on mount
+  useEffect(() => {
+    if ('Notification' in window) {
+      setNotificationPermission(Notification.permission);
+    }
+  }, []);
+
+  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (notificationRef.current && !notificationRef.current.contains(event.target)) {
@@ -35,7 +42,7 @@ export default function Navbar() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // ⭐ Prevent body scroll when mobile menu is open
+  // Prevent body scroll when mobile menu is open
   useEffect(() => {
     if (showMobileMenu) {
       document.body.style.overflow = 'hidden';
@@ -47,11 +54,70 @@ export default function Navbar() {
     };
   }, [showMobileMenu]);
 
+  // ⭐ Request notification permission
+  const requestNotificationPermission = async () => {
+    if ('Notification' in window) {
+      const permission = await Notification.requestPermission();
+      setNotificationPermission(permission);
+      
+      if (permission === 'granted') {
+        // Show success message
+        alert('✅ Notifications enabled! You\'ll now receive order updates.');
+      } else if (permission === 'denied') {
+        alert('❌ Notifications blocked. Please enable them in your browser settings to receive order updates.');
+      }
+    } else {
+      alert('❌ Your browser doesn\'t support notifications.');
+    }
+  };
+
+  // ⭐ Handle notification button click
+  const handleNotificationClick = () => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      // Show alert to enable notifications
+      const enable = confirm(
+        '🔔 Enable browser notifications to get real-time updates about your orders!\n\nClick OK to enable notifications.'
+      );
+      if (enable) {
+        requestNotificationPermission();
+      }
+    } else if ('Notification' in window && Notification.permission === 'denied') {
+      // Show instructions to enable in settings
+      alert(
+        '🔔 Notifications are blocked!\n\n' +
+        'To enable notifications:\n' +
+        '1. Click the lock icon in your browser\'s address bar\n' +
+        '2. Find "Notifications" in the permissions\n' +
+        '3. Change it to "Allow"\n' +
+        '4. Refresh the page'
+      );
+    }
+    
+    // Toggle notifications panel
+    setShowNotifications(!showNotifications);
+  };
+
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       router.push(`/?search=${encodeURIComponent(searchQuery.trim())}`);
     }
+  };
+
+  // ⭐ Format timestamp for better readability
+  const formatTimestamp = (timestamp) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' });
   };
 
   return (
@@ -120,40 +186,61 @@ export default function Navbar() {
                       {/* ⭐ Notifications Dropdown */}
                       <div className="relative" ref={notificationRef}>
                         <button 
-                          onClick={() => setShowNotifications(!showNotifications)}
+                          onClick={handleNotificationClick}
                           className="relative p-2 hover:bg-muted rounded-full transition-colors"
                           title="Notifications"
                         >
-                          <Bell className="w-6 h-6 text-foreground" />
+                          {notificationPermission === 'denied' ? (
+                            <BellOff className="w-6 h-6 text-muted-foreground" />
+                          ) : (
+                            <Bell className="w-6 h-6 text-foreground" />
+                          )}
                           {unreadCount > 0 && (
-                            <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                              {unreadCount}
+                            <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1">
+                              {unreadCount > 99 ? '99+' : unreadCount}
                             </span>
                           )}
                         </button>
 
-                        {/* Notifications Dropdown */}
+                        {/* ⭐ Notifications Dropdown */}
                         {showNotifications && (
-                          <div className="absolute right-0 mt-2 w-80 bg-card border border-border rounded-xl shadow-elegant-lg max-h-96 overflow-y-auto z-50">
-                            <div className="p-4 border-b border-border flex items-center justify-between sticky top-0 bg-card">
-                              <h3 className="font-semibold text-foreground">Notifications</h3>
+                          <div className="absolute right-0 mt-2 w-96 bg-card border border-border rounded-xl shadow-2xl max-h-[32rem] overflow-hidden z-50">
+                            {/* Header */}
+                            <div className="p-4 border-b border-border flex items-center justify-between sticky top-0 bg-card z-10">
+                              <div className="flex items-center gap-2">
+                                <h3 className="font-bold text-foreground">Notifications</h3>
+                                {notificationPermission === 'denied' && (
+                                  <button
+                                    onClick={requestNotificationPermission}
+                                    className="text-xs text-red-500 hover:underline"
+                                    title="Enable browser notifications"
+                                  >
+                                    🔴 Blocked
+                                  </button>
+                                )}
+                              </div>
                               {notifications.length > 0 && (
                                 <button
                                   onClick={markAllAsRead}
-                                  className="text-xs text-secondary hover:underline"
+                                  className="text-xs text-secondary hover:underline font-semibold"
                                 >
                                   Mark all as read
                                 </button>
                               )}
                             </div>
                             
-                            <div className="divide-y divide-border">
+                            {/* Notifications List */}
+                            <div className="overflow-y-auto max-h-[28rem] divide-y divide-border">
                               {notifications.length === 0 ? (
-                                <div className="p-8 text-center text-muted-foreground">
-                                  No notifications yet
+                                <div className="p-8 text-center">
+                                  <Bell className="w-12 h-12 text-muted-foreground mx-auto mb-3 opacity-50" />
+                                  <p className="text-muted-foreground font-medium">No notifications yet</p>
+                                  <p className="text-sm text-muted-foreground mt-1">
+                                    You'll be notified when your order status changes
+                                  </p>
                                 </div>
                               ) : (
-                                notifications.slice(0, 5).map((notification) => (
+                                notifications.map((notification) => (
                                   <Link
                                     key={notification.id}
                                     href={`/order-tracking?orderId=${notification.orderId}`}
@@ -162,22 +249,41 @@ export default function Navbar() {
                                       setShowNotifications(false);
                                     }}
                                     className={`block p-4 hover:bg-muted transition-colors ${
-                                      !notification.read ? 'bg-secondary/5' : ''
+                                      !notification.read ? 'bg-secondary/5 border-l-4 border-l-secondary' : ''
                                     }`}
                                   >
-                                    <p className="font-medium text-foreground text-sm mb-1">
-                                      Order #{notification.orderId}
-                                    </p>
-                                    <p className="text-xs text-muted-foreground">
-                                      {notification.message}
-                                    </p>
-                                    <p className="text-xs text-muted-foreground mt-1">
-                                      {new Date(notification.timestamp).toLocaleTimeString()}
-                                    </p>
+                                    <div className="flex items-start gap-3">
+                                      <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${
+                                        !notification.read ? 'bg-secondary' : 'bg-transparent'
+                                      }`} />
+                                      <div className="flex-1 min-w-0">
+                                        <p className="font-semibold text-foreground text-sm mb-1">
+                                          Order #{notification.orderId}
+                                        </p>
+                                        <p className="text-sm text-muted-foreground mb-1 line-clamp-2">
+                                          {notification.message}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground">
+                                          {formatTimestamp(notification.timestamp)}
+                                        </p>
+                                      </div>
+                                    </div>
                                   </Link>
                                 ))
                               )}
                             </div>
+
+                            {/* ⭐ Footer with permission status */}
+                            {notificationPermission !== 'granted' && (
+                              <div className="p-3 bg-muted/50 border-t border-border">
+                                <button
+                                  onClick={requestNotificationPermission}
+                                  className="w-full text-xs text-center text-secondary hover:underline font-semibold"
+                                >
+                                  🔔 Enable browser notifications for real-time updates
+                                </button>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
@@ -270,7 +376,8 @@ export default function Navbar() {
           {/* Menu Content */}
           <div 
             ref={mobileMenuRef}
-            className="absolute top-0 right-0 h-full w-[80%] max-w-sm bg-card shadow-elegant-lg animate-slide-in"
+            className="absolute top-0 right-0 h-full w-[80%] max-w-sm bg-card shadow-elegant-lg"
+            style={{ animation: 'slideInRight 0.3s ease-out' }}
           >
             <div className="flex flex-col h-full">
               {/* Header */}
@@ -316,19 +423,25 @@ export default function Navbar() {
                         <User className="w-5 h-5" />
                         <span className="font-medium">Profile</span>
                       </Link>
-                      <Link
-                        href="/order-tracking"
-                        onClick={() => setShowMobileMenu(false)}
-                        className="flex items-center gap-3 p-3 hover:bg-muted rounded-lg transition-colors"
+                      <button
+                        onClick={() => {
+                          setShowMobileMenu(false);
+                          handleNotificationClick();
+                        }}
+                        className="w-full flex items-center gap-3 p-3 hover:bg-muted rounded-lg transition-colors"
                       >
-                        <Bell className="w-5 h-5" />
+                        {notificationPermission === 'denied' ? (
+                          <BellOff className="w-5 h-5" />
+                        ) : (
+                          <Bell className="w-5 h-5" />
+                        )}
                         <span className="font-medium">Notifications</span>
                         {unreadCount > 0 && (
-                          <span className="ml-auto bg-destructive text-destructive-foreground text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                            {unreadCount}
+                          <span className="ml-auto bg-destructive text-destructive-foreground text-xs font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-2">
+                            {unreadCount > 99 ? '99+' : unreadCount}
                           </span>
                         )}
-                      </Link>
+                      </button>
                     </>
                   )}
                 </div>
