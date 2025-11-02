@@ -151,11 +151,11 @@ export default function ProfilePage() {
                 </Link>
               ))}
 
-              {orders.length > 5 && (
+              {/* {orders.length > 5 && (
                 <button className="w-full text-secondary font-semibold py-2 hover:underline">
                   View All Orders
                 </button>
-              )}
+              )} */}
             </div>
           )}
         </div>
