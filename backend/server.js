@@ -22,6 +22,7 @@ const PORT = process.env.PORT || 3001;
 // ⭐ CORS configuration
 const allowedOrigins = [
   'https://campus-bites-web.vercel.app',
+  'https://campus-bites-server.vercel.app',
   'http://localhost:3000',
   'http://localhost:3001'
 ];
