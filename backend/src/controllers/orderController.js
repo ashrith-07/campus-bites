@@ -49,18 +49,25 @@ const confirmOrder = async (req, res) => {
     // Create order in database
     const order = await prisma.order.create({
       data: {
-        userId: req.user.userId,
         total: parseFloat(totalAmount),
         status: 'PENDING',
         paymentIntentId: paymentId || orderId, // Store payment reference
+
+        // ⭐ FIX 1: Connect the user via their 'userId' from the token
+        user: {
+          connect: {
+            id: req.user.userId 
+          }
+        },
+        
+        // ⭐ FIX 2: Connect the menu items
         items: {
           create: items.map(item => ({
             quantity: item.quantity,
             price: parseFloat(item.price || 0),
-            // ⭐ This is the new, robust way to connect the relation
             menuItem: {
               connect: {
-                id: parseInt(item.menuItemId) // Connect to an existing MenuItem by its ID
+                id: parseInt(item.menuItemId) // Parse the ID just in case
               }
             }
           }))
@@ -71,9 +78,10 @@ const confirmOrder = async (req, res) => {
         user: { select: { id: true, name: true, email: true } }
       }
     });
-    // ⭐ Emit to user via Socket
+
+    // ⭐ FIX 3: Emit to user via Socket using req.user.userId
     if (global.emitToUser) {
-      global.emitToUser(req.user.id, 'order-update', {
+      global.emitToUser(req.user.userId, 'order-update', {
         orderId: order.id,
         status: 'PENDING',
         message: `Your order #${order.id} has been placed successfully!`,
@@ -93,9 +101,10 @@ const confirmOrder = async (req, res) => {
 // Get all orders
 const getAllOrders = async (req, res) => {
   try {
+    // ⭐ FIX 4: Use req.user.userId to filter for customers
     const whereClause = req.user.role === 'VENDOR' 
       ? {} 
-      : { userId: req.user.id };
+      : { userId: req.user.userId };
 
     const orders = await prisma.order.findMany({
       where: whereClause,
@@ -130,7 +139,8 @@ const getOrderById = async (req, res) => {
       return res.status(404).json({ error: 'Order not found' });
     }
 
-    if (req.user.role !== 'VENDOR' && order.userId !== req.user.id) {
+    // ⭐ FIX 5: Use req.user.userId to check authorization
+    if (req.user.role !== 'VENDOR' && order.userId !== req.user.userId) {
       return res.status(403).json({ error: 'Unauthorized to view this order' });
     }
 
@@ -188,7 +198,8 @@ const updateOrderStatus = async (req, res) => {
       });
     }
 
-    console.log(`[Order ${orderId}] Status updated to ${status} by vendor ${req.user.id}`);
+    // ⭐ FIX 6 (Minor): Use req.user.userId in the console log
+    console.log(`[Order ${orderId}] Status updated to ${status} by vendor ${req.user.userId}`);
 
     res.json({ success: true, order: updatedOrder });
   } catch (error) {
@@ -197,6 +208,7 @@ const updateOrderStatus = async (req, res) => {
   }
 };
 
+// Delete order
 // Delete order
 const deleteOrder = async (req, res) => {
   try {
@@ -207,10 +219,12 @@ const deleteOrder = async (req, res) => {
     });
 
     if (!order) {
+      // ⭐ FIX: Corrected the typo to 404 and added the .json response
       return res.status(404).json({ error: 'Order not found' });
     }
 
-    if (req.user.role !== 'VENDOR' && order.userId !== req.user.id) {
+    // ⭐ FIX: Use req.user.userId to check authorization
+    if (req.user.role !== 'VENDOR' && order.userId !== req.user.userId) {
       return res.status(403).json({ error: 'Unauthorized to delete this order' });
     }
 
