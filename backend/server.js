@@ -29,14 +29,7 @@ const allowedOrigins = 'https://campus-bites-web.vercel.app'
 // ];
 
 app.use(cors({
-    origin: function (origin, callback) {
-      // Allow requests with no origin (like mobile apps or curl requests)
-      if (!origin) return callback(null, true);
-      if (origin !== allowedOrigins) {
-        return callback(new Error('CORS policy violation'), false);
-      }
-      return callback(null, true);
-    },
+    origin: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true
 }));
