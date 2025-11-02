@@ -268,8 +268,8 @@ export default function CheckoutPage() {
                         <CreditCard className="w-5 h-5 text-white" />
                       </div>
                       <div>
-                        <p className="font-semibold text-foreground">Pay on Pickup</p>
-                        <p className="text-xs text-muted-foreground">Cash or Card at counter</p>
+                        <p className="font-semibold text-foreground">Pay Online</p>
+                        <p className="text-xs text-muted-foreground">Secure payment with Razorpay</p>
                       </div>
                     </div>
                   </div>

@@ -49,7 +49,7 @@ const confirmOrder = async (req, res) => {
     // Create order in database
     const order = await prisma.order.create({
       data: {
-        userId: req.user.id,
+        userId: req.user.userId,
         total: parseFloat(totalAmount),
         status: 'PENDING',
         paymentIntentId: paymentId || orderId, // Store payment reference
