@@ -152,6 +152,7 @@ app.get('/api/status', (req, res) => {
   });
 });
 
+
 httpServer.listen(PORT, () => {
   console.log(`🚀 Backend server listening on http://localhost:${PORT}`);
   console.log(`🔌 Socket.IO ready`);

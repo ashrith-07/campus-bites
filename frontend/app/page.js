@@ -16,7 +16,7 @@ function HomeContent() {
   const searchParams = useSearchParams();
   const searchQuery = searchParams.get('search') || '';
   const { user } = useAuth();
-  const { storeStatus } = useSocket(); // ⭐ Get store status from SSE
+  const { storeStatus } = useSocket();
 
   const [menuItems, setMenuItems] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('All');
