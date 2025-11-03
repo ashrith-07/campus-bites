@@ -1,115 +1,109 @@
-const prisma = require('../utils/prisma');
+const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
+const prisma = new PrismaClient();
 
-const JWT_SECRET = process.env.JWT_SECRET;
-const SALT_ROUNDS = 10; 
-
-
+// Sign Up
 const signup = async (req, res) => {
-  const { email, password, name } = req.body;
-
-  if (!email || !password) {
-    return res.status(400).json({ error: 'Email and password are required.' });
-  }
-
   try {
-    const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+    const { name, email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
+    }
+
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+    if (existingUser) {
+      return res.status(400).json({ error: 'User already exists' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await prisma.user.create({
       data: {
-        email,
-        passwordHash, 
         name,
-        role: 'CUSTOMER', 
-      },
-      select: { id: true, email: true, name: true, role: true } 
-    });
-
-
-    const token = jwt.sign(
-  { 
-    id: user.id,  // or userId: user.id - must match what auth middleware expects
-    email: user.email,
-    role: user.role 
-  },
-  process.env.JWT_SECRET,
-  { expiresIn: '7d' }
-);
-
-    res.status(201).json({ 
-      message: 'User registered and logged in successfully.',
-      token,
-      user
-    });
-
-  } catch (error) {
-    console.error('Signup error:', error);
-    if (error.code === 'P2002') {
-      return res.status(409).json({ error: 'A user with this email already exists.' });
-    }
-    res.status(500).json({ error: 'Internal server error.' });
-  }
-};
-
-
-const login = async (req, res) => {
-  const { email, password } = req.body;
-
-  if (!email || !password) {
-    return res.status(400).json({ error: 'Email and password are required.' });
-  }
-
-  try {
-    const user = await prisma.user.findUnique({
-      where: { email },
-      select: { 
-        id: true, 
-        email: true, 
-        name: true, 
-        role: true, 
-        passwordHash: true 
+        email,
+        passwordHash: hashedPassword,
+        role: 'CUSTOMER'
       }
     });
 
-    if (!user) {
-      return res.status(401).json({ error: 'Invalid credentials.' });
-    }
-
-    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
-
-    if (!isPasswordValid) {
-      return res.status(401).json({ error: 'Invalid credentials.' });
-    }
-
-    
+    // ⭐ CRITICAL: Use 'id' not 'userId' for Socket.IO compatibility
     const token = jwt.sign(
-  { 
-    id: user.id,  // or userId: user.id - must match what auth middleware expects
-    email: user.email,
-    role: user.role 
-  },
-  process.env.JWT_SECRET,
-  { expiresIn: '7d' }
-);
-    
+      { 
+        id: user.id,        // ⭐ Must be 'id'
+        email: user.email,
+        role: user.role,
+        name: user.name
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
 
-    const userResponse = { id: user.id, email: user.email, name: user.name, role: user.role };
+    console.log('[Auth] ✅ User signed up:', { id: user.id, email: user.email, role: user.role });
 
-    res.status(200).json({ 
-      message: 'Login successful.',
+    res.status(201).json({
       token,
-      user: userResponse
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      }
     });
-
   } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({ error: 'Internal server error during login.' });
+    console.error('[Auth] Signup error:', error);
+    res.status(500).json({ error: 'Failed to sign up' });
   }
 };
 
-module.exports = {
-  signup,
-  login,
+// Login
+const login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
+    }
+
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+    if (!isPasswordValid) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    // ⭐ CRITICAL: Use 'id' not 'userId' for Socket.IO compatibility
+    const token = jwt.sign(
+      { 
+        id: user.id,        // ⭐ Must be 'id'
+        email: user.email,
+        role: user.role,
+        name: user.name
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    console.log('[Auth] ✅ User logged in:', { id: user.id, email: user.email, role: user.role });
+
+    res.json({
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      }
+    });
+  } catch (error) {
+    console.error('[Auth] Login error:', error);
+    res.status(500).json({ error: 'Failed to log in' });
+  }
 };
+
+module.exports = { signup, login };

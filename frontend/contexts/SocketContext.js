@@ -46,6 +46,9 @@ export function SocketProvider({ children }) {
   // ⭐ Socket Connection
   useEffect(() => {
     if (!token || !user) {
+      console.log('[Socket] ⚠️ No token or user, skipping connection');
+      console.log('[Socket] Token exists:', !!token);
+      console.log('[Socket] User exists:', !!user);
       if (socketRef.current) {
         socketRef.current.disconnect();
         socketRef.current = null;
@@ -55,42 +58,56 @@ export function SocketProvider({ children }) {
 
     // ⭐ Get base URL without /api for socket connection
     const SOCKET_URL = API_URL.replace('/api', '');
+    
+    console.log('[Socket] 🔌 Attempting connection...');
+    console.log('[Socket] URL:', SOCKET_URL);
+    console.log('[Socket] 👤 User ID:', user.id);
+    console.log('[Socket] 👤 Email:', user.email);
+    console.log('[Socket] 👤 Role:', user.role);
+    console.log('[Socket] 🔑 Token (first 20 chars):', token?.substring(0, 20) + '...');
 
     // Connect to Socket.IO server
-    // ⭐ Try WebSocket first, fallback to polling automatically
     const socket = io(SOCKET_URL, {
-      auth: { token },
+      auth: { token }, // ⭐ Pass the token for authentication
       transports: ['websocket', 'polling'], // Try WebSocket first
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
-      reconnectionAttempts: 3, // Limit attempts to reduce console spam
+      reconnectionAttempts: 5,
       timeout: 10000,
-      upgrade: true, // Allow upgrade from polling to WebSocket
-      rememberUpgrade: true
+      upgrade: true,
+      rememberUpgrade: true,
+      autoConnect: true // ⭐ Ensure auto-connect is enabled
     });
 
     socketRef.current = socket;
 
-    // Connection events
+    // ⭐ Connection events with detailed logging
     socket.on('connect', () => {
-      console.log('[Socket] ✅ Connected:', socket.id);
+      console.log('[Socket] ✅ Connected successfully!');
+      console.log('[Socket] ID:', socket.id);
+      console.log('[Socket] Transport:', socket.io.engine.transport.name);
       setIsConnected(true);
     });
 
-    socket.on('disconnect', () => {
-      console.log('[Socket] ❌ Disconnected');
+    socket.on('disconnect', (reason) => {
+      console.log('[Socket] ❌ Disconnected. Reason:', reason);
       setIsConnected(false);
     });
 
     socket.on('connect_error', (error) => {
-      console.error('[Socket] Connection error:', error.message);
+      console.error('[Socket] ⚠️ Connection error:', error.message);
+      console.error('[Socket] Error details:', error);
       setIsConnected(false);
+    });
+
+    socket.on('error', (error) => {
+      console.error('[Socket] ⚠️ Socket error:', error);
     });
 
     // ⭐ Store status updates
     socket.on('store-status', (data) => {
-      console.log('[Socket] 🏪 Store status:', data.isOpen);
+      console.log('[Socket] 🏪 Store status update received:', data);
       setStoreStatus(data.isOpen);
 
       if (user?.role !== 'VENDOR') {
@@ -98,18 +115,22 @@ export function SocketProvider({ children }) {
           ? '🎉 Store is now open! You can place orders.' 
           : '🔒 Store is now closed. Orders are temporarily unavailable.';
         
-        showToast({
+        const notification = {
           id: Date.now(),
           message,
           timestamp: new Date(),
-          type: 'store-status'
-        });
+          type: 'store-status',
+          read: false
+        };
+        
+        setNotifications(prev => [notification, ...prev]);
+        showToast(notification);
       }
     });
 
-    // ⭐ Order updates
+    // ⭐ Order updates with detailed logging
     socket.on('order-update', (data) => {
-      console.log('[Socket] 📦 Order update:', data);
+      console.log('[Socket] 📦 Order update received:', data);
       
       const notification = {
         id: Date.now(),
@@ -121,8 +142,16 @@ export function SocketProvider({ children }) {
         type: 'order-update'
       };
 
-      setNotifications(prev => [notification, ...prev]);
-      setUnreadCount(prev => prev + 1);
+      setNotifications(prev => {
+        console.log('[Socket] 📋 Adding notification. Total:', prev.length + 1);
+        return [notification, ...prev];
+      });
+      
+      setUnreadCount(prev => {
+        const newCount = prev + 1;
+        console.log('[Socket] 🔔 Unread count:', newCount);
+        return newCount;
+      });
 
       setOrderUpdates(prev => ({
         ...prev,
@@ -135,8 +164,14 @@ export function SocketProvider({ children }) {
       showToast(notification);
     });
 
+    // ⭐ Debug: Log all events
+    socket.onAny((eventName, ...args) => {
+      console.log('[Socket] 📨 Event received:', eventName, args);
+    });
+
     // Cleanup
     return () => {
+      console.log('[Socket] 🔌 Disconnecting socket...');
       if (socket) {
         socket.disconnect();
       }
@@ -144,6 +179,7 @@ export function SocketProvider({ children }) {
   }, [token, user, API_URL]);
 
   const showToast = (notification) => {
+    console.log('[Toast] 🍞 Showing toast:', notification);
     const event = new CustomEvent('show-notification', { detail: notification });
     window.dispatchEvent(event);
   };
@@ -176,8 +212,30 @@ export function SocketProvider({ children }) {
   // ⭐ Emit events to server
   const emitStoreStatusUpdate = (isOpen) => {
     if (socketRef.current && isConnected) {
+      console.log('[Socket] 📤 Emitting store status update:', isOpen);
       socketRef.current.emit('update-store-status', { isOpen });
+    } else {
+      console.error('[Socket] ⚠️ Cannot emit - socket not connected');
     }
+  };
+
+  // ⭐ Debug function to test notifications
+  const testNotification = () => {
+    const testNotif = {
+      id: Date.now(),
+      orderId: 999,
+      status: 'READY',
+      message: '🧪 Test notification - Your order is ready!',
+      timestamp: new Date(),
+      read: false,
+      type: 'order-update'
+    };
+    
+    setNotifications(prev => [testNotif, ...prev]);
+    setUnreadCount(prev => prev + 1);
+    showToast(testNotif);
+    
+    console.log('[Debug] 🧪 Test notification sent!');
   };
 
   return (
@@ -193,7 +251,8 @@ export function SocketProvider({ children }) {
         storeStatus,
         updateStoreStatus,
         isConnected,
-        emitStoreStatusUpdate
+        emitStoreStatusUpdate,
+        testNotification // ⭐ Add test function
       }}
     >
       {children}

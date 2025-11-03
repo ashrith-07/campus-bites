@@ -8,14 +8,15 @@ export default function NotificationToast() {
   const [toasts, setToasts] = useState([]);
   const [permission, setPermission] = useState('default');
 
-  // ⭐ Check and request notification permission on mount
+  // Check and request notification permission on mount
   useEffect(() => {
     if ('Notification' in window) {
       setPermission(Notification.permission);
+      console.log('[Toast] 🔔 Notification permission:', Notification.permission);
     }
   }, []);
 
-  // ⭐ Request browser notification permission
+  // Request browser notification permission
   const requestNotificationPermission = async () => {
     if ('Notification' in window && Notification.permission === 'default') {
       const permission = await Notification.requestPermission();
@@ -27,13 +28,19 @@ export default function NotificationToast() {
 
   useEffect(() => {
     const handleNotification = async (event) => {
+      console.log('[Toast] 📨 Notification event received:', event.detail);
+      
       const notification = event.detail;
       const toastId = Date.now();
       
       // Add to toast list
-      setToasts(prev => [...prev, { ...notification, toastId }]);
+      setToasts(prev => {
+        const newToasts = [...prev, { ...notification, toastId }];
+        console.log('[Toast] 📋 Total toasts:', newToasts.length);
+        return newToasts;
+      });
 
-      // ⭐ Show browser notification if permitted
+      // Show browser notification if permitted
       if ('Notification' in window) {
         if (Notification.permission === 'granted') {
           showBrowserNotification(notification);
@@ -46,26 +53,33 @@ export default function NotificationToast() {
         }
       }
 
-      // Auto remove after 6 seconds (increased for better readability)
+      // Auto remove after 6 seconds
       setTimeout(() => {
         setToasts(prev => prev.filter(t => t.toastId !== toastId));
       }, 6000);
     };
 
+    console.log('[Toast] 🎧 Listening for show-notification events...');
     window.addEventListener('show-notification', handleNotification);
-    return () => window.removeEventListener('show-notification', handleNotification);
+    
+    return () => {
+      console.log('[Toast] 🔇 Removing show-notification listener');
+      window.removeEventListener('show-notification', handleNotification);
+    };
   }, []);
 
-  // ⭐ Show native browser notification
+  // Show native browser notification
   const showBrowserNotification = (notification) => {
     if ('Notification' in window && Notification.permission === 'granted') {
+      console.log('[Toast] 🔔 Showing browser notification:', notification);
+      
       const title = notification.type === 'store-status' 
         ? 'Campus Bites Store Update'
         : `Order #${notification.orderId}`;
       
       const options = {
         body: notification.message,
-        icon: '/favicon.ico', // You can use your logo here
+        icon: '/favicon.ico',
         badge: '/favicon.ico',
         tag: notification.orderId ? `order-${notification.orderId}` : 'store-status',
         requireInteraction: false,
@@ -73,23 +87,28 @@ export default function NotificationToast() {
         vibrate: [200, 100, 200]
       };
 
-      const browserNotif = new Notification(title, options);
+      try {
+        const browserNotif = new Notification(title, options);
 
-      // Handle click on notification
-      browserNotif.onclick = () => {
-        window.focus();
-        if (notification.orderId) {
-          window.location.href = `/order-tracking?orderId=${notification.orderId}`;
-        }
-        browserNotif.close();
-      };
+        // Handle click on notification
+        browserNotif.onclick = () => {
+          window.focus();
+          if (notification.orderId) {
+            window.location.href = `/order-tracking?orderId=${notification.orderId}`;
+          }
+          browserNotif.close();
+        };
 
-      // Auto close after 5 seconds
-      setTimeout(() => browserNotif.close(), 5000);
+        // Auto close after 5 seconds
+        setTimeout(() => browserNotif.close(), 5000);
+      } catch (error) {
+        console.error('[Toast] ❌ Failed to show browser notification:', error);
+      }
     }
   };
 
   const removeToast = (toastId) => {
+    console.log('[Toast] 🗑️ Removing toast:', toastId);
     setToasts(prev => prev.filter(t => t.toastId !== toastId));
   };
 
@@ -123,47 +142,52 @@ export default function NotificationToast() {
     return `Order #${notification.orderId}`;
   };
 
+  console.log('[Toast] 📊 Current toasts:', toasts.length);
+
   return (
-    <div className="fixed top-20 right-4 sm:right-6 z-[60] space-y-3 max-w-[calc(100vw-2rem)] sm:max-w-sm">
-      {toasts.map((toast) => (
-        <div
-          key={toast.toastId}
-          className="bg-card border-2 border-border rounded-xl shadow-2xl p-4 animate-slide-in backdrop-blur-sm"
-          style={{
-            animation: 'slideInRight 0.3s ease-out'
-          }}
-        >
-          <div className="flex items-start gap-3">
-            <div className="flex-shrink-0 mt-0.5">
-              {getIcon(toast)}
+    <div className="fixed top-20 right-4 sm:right-6 z-[60] space-y-3 max-w-[calc(100vw-2rem)] sm:max-w-sm pointer-events-none">
+      {toasts.map((toast) => {
+        console.log('[Toast] 🍞 Rendering toast:', toast.toastId);
+        return (
+          <div
+            key={toast.toastId}
+            className="bg-card border-2 border-border rounded-xl shadow-2xl p-4 pointer-events-auto backdrop-blur-sm animate-slide-in"
+            style={{
+              animation: 'slideInRight 0.3s ease-out'
+            }}
+          >
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 mt-0.5">
+                {getIcon(toast)}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-foreground mb-1 text-sm">
+                  {getTitle(toast)}
+                </p>
+                <p className="text-sm text-muted-foreground mb-2 leading-snug">
+                  {toast.message}
+                </p>
+                {toast.orderId && (
+                  <Link
+                    href={`/order-tracking?orderId=${toast.orderId}`}
+                    className="inline-block text-sm text-secondary hover:underline font-semibold"
+                    onClick={() => removeToast(toast.toastId)}
+                  >
+                    View Order →
+                  </Link>
+                )}
+              </div>
+              <button
+                onClick={() => removeToast(toast.toastId)}
+                className="flex-shrink-0 p-1 hover:bg-muted rounded-full transition-colors"
+                aria-label="Close notification"
+              >
+                <X className="w-4 h-4 text-muted-foreground" />
+              </button>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-bold text-foreground mb-1 text-sm">
-                {getTitle(toast)}
-              </p>
-              <p className="text-sm text-muted-foreground mb-2 leading-snug">
-                {toast.message}
-              </p>
-              {toast.orderId && (
-                <Link
-                  href={`/order-tracking?orderId=${toast.orderId}`}
-                  className="inline-block text-sm text-secondary hover:underline font-semibold"
-                  onClick={() => removeToast(toast.toastId)}
-                >
-                  View Order →
-                </Link>
-              )}
-            </div>
-            <button
-              onClick={() => removeToast(toast.toastId)}
-              className="flex-shrink-0 p-1 hover:bg-muted rounded-full transition-colors"
-              aria-label="Close notification"
-            >
-              <X className="w-4 h-4 text-muted-foreground" />
-            </button>
           </div>
-        </div>
-      ))}
+        );
+      })}
 
       <style jsx global>{`
         @keyframes slideInRight {
@@ -175,6 +199,15 @@ export default function NotificationToast() {
             transform: translateX(0);
             opacity: 1;
           }
+        }
+        
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+        
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
         }
       `}</style>
     </div>

@@ -1,37 +1,50 @@
 const jwt = require('jsonwebtoken');
 
-const JWT_SECRET = process.env.JWT_SECRET;
-
 const authenticateToken = (req, res, next) => {
-  const token = req.headers.authorization?.split(' ')[1];
+  const authHeader = req.headers.authorization;
+  const token = authHeader?.split(' ')[1];
   
   if (!token) {
+    console.log('[Auth Middleware] ❌ No token provided');
     return res.status(401).json({ error: 'No token provided' });
   }
   
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    // ⭐ CRITICAL: Ensure we use 'id' from the token
     req.user = {
-      id: decoded.userId || decoded.id,
+      id: decoded.id || decoded.userId, // Try id first, fallback to userId
       email: decoded.email,
-      role: decoded.role
+      role: decoded.role,
+      name: decoded.name
     };
+
+    console.log('[Auth Middleware] ✅ User authenticated:', {
+      id: req.user.id,
+      email: req.user.email,
+      role: req.user.role
+    });
+    
     next();
   } catch (error) {
+    console.error('[Auth Middleware] ❌ Token verification failed:', error.message);
     return res.status(401).json({ error: 'Invalid token' });
   }
 };
 
 const checkVendorRole = (req, res, next) => {
-  
   if (!req.user) {
-    return res.status(500).json({ error: 'Authentication data missing.' });
+    console.error('[Vendor Check] ❌ Authentication data missing');
+    return res.status(500).json({ error: 'Authentication data missing' });
   }
 
   if (req.user.role !== 'VENDOR') {
-    return res.status(403).json({ error: 'Forbidden. Access requires Vendor role.' });
+    console.log(`[Vendor Check] ❌ User ${req.user.id} (${req.user.role}) attempted vendor access`);
+    return res.status(403).json({ error: 'Forbidden. Access requires Vendor role' });
   }
 
+  console.log(`[Vendor Check] ✅ Vendor ${req.user.id} authorized`);
   next();
 };
 
