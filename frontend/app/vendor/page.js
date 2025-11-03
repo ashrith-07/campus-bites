@@ -29,7 +29,7 @@ export default function VendorDashboard() {
 const toggleStoreStatus = async () => {
   const newStatus = !storeStatus;
   
-  // Optimistic update
+
   updateStoreStatus(newStatus);
   
   try {
