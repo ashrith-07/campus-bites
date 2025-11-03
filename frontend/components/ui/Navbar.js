@@ -2,7 +2,7 @@
 import { Search, Bell, ShoppingCart, User, Menu, X, LayoutDashboard, BellOff } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
-import { useSocket } from '@/contexts/SocketContext';
+import { usePusher as useSocket } from '@/contexts/PusherContext';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';

@@ -2,7 +2,7 @@
 
 import { Clock, Phone, Mail } from 'lucide-react';
 import Link from 'next/link';
-import { useSocket } from '@/contexts/SocketContext'; // ⭐ Import SSE
+import { useSocket } from '@/contexts/PusherContext'; // ⭐ Import SSE
 
 export default function StoreClosed() {
   const { storeStatus } = useSocket(); // ⭐ Get real-time status

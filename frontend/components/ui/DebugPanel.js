@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useSocket } from '@/contexts/SocketContext';
+import { useSocket } from '@/contexts/PusherContext';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function DebugPanel() {

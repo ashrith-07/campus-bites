@@ -9,7 +9,7 @@ import CartSidebar from '@/components/ui/CartSidebar';
 import StoreClosed from '@/components/ui/StoreClosed';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
-import { useSocket } from '@/contexts/SocketContext'; // ⭐ Import SSE
+import { useSocket } from '@/contexts/PusherContext'; // ⭐ Import SSE
 
 function HomeContent() {
   const categories = ['All', 'Pizza', 'Rolls', 'Beverages', 'Desserts', 'Sandwiches', 'Snacks'];

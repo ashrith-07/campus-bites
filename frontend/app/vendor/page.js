@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { useSocket } from '@/contexts/SocketContext';
+import { usePusher as useSocket } from '@/contexts/PusherContext';
 import { Package, ChefHat, BarChart3, LogOut } from 'lucide-react';
 
 export default function VendorDashboard() {

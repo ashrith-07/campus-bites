@@ -2,9 +2,9 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { CartProvider } from '@/contexts/CartContext';
-import { SocketProvider } from '@/contexts/SocketContext';
+import { PusherProvider } from '@/contexts/PusherContext'; // ⭐ Updated import
+import Navbar from '@/components/ui/Navbar';
 import NotificationToast from '@/components/ui/NotificationToast';
-import DebugPanel from '@/components/ui/DebugPanel'; // ⭐ Add debug panel
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -18,14 +18,13 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body className={inter.className}>
         <AuthProvider>
-          <SocketProvider>
-            <CartProvider>
+          <CartProvider>
+            <PusherProvider>
+              <Navbar />
               {children}
-              {/* ⭐ Global components */}
               <NotificationToast />
-              <DebugPanel /> {/* ⭐ Debug panel for testing */}
-            </CartProvider>
-          </SocketProvider>
+            </PusherProvider>
+          </CartProvider>
         </AuthProvider>
       </body>
     </html>

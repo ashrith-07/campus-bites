@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Package, Clock, CheckCircle, XCircle } from 'lucide-react';
 import Link from 'next/link';
-import { useSocket } from '@/contexts/SocketContext';
+import { usePusher as useSocket } from '@/contexts/PusherContext';
 
 // Content component
 function OrderTrackingContent() {

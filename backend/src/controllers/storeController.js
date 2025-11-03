@@ -52,18 +52,11 @@ const updateStoreStatus = async (req, res) => {
 
     console.log(`[Store] Status updated to ${isOpen} by vendor ${req.user.id}`);
 
-    // Broadcast via SSE if available
-    if (global.sseClients && global.sseClients.size > 0) {
-      global.sseClients.forEach((client) => {
-        try {
-          client.response.write(`event: store-status\ndata: ${JSON.stringify({ 
-            type: 'store-status', 
-            isOpen,
-            timestamp: new Date().toISOString()
-          })}\n\n`);
-        } catch (error) {
-          console.error('SSE broadcast error:', error.message);
-        }
+    // ⭐ Broadcast store status via Pusher
+    if (global.broadcastStoreStatus) {
+      await global.broadcastStoreStatus({
+        isOpen,
+        timestamp: new Date().toISOString()
       });
     }
 

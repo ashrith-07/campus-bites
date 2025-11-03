@@ -6,7 +6,6 @@ const createCheckout = async (req, res) => {
   try {
     const { totalAmount, items } = req.body;
     
-    // Validate user is authenticated
     if (!req.user || !req.user.id) {
       return res.status(401).json({ error: 'User not authenticated' });
     }
@@ -39,13 +38,12 @@ const confirmOrder = async (req, res) => {
   try {
     const { totalAmount, items, paymentId, orderId } = req.body;
 
-    // CRITICAL: Validate user authentication
     if (!req.user || !req.user.id) {
       console.error('[Order] User not authenticated - req.user:', req.user);
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    const userId = req.user.id; // Use id, not userId
+    const userId = req.user.id;
     console.log('[Order] Confirming order for user:', userId);
 
     if (!items || !Array.isArray(items) || items.length === 0) {
@@ -56,10 +54,9 @@ const confirmOrder = async (req, res) => {
       return res.status(400).json({ error: 'Valid total amount is required' });
     }
 
-    // Create the order
     const order = await prisma.order.create({
       data: {
-        userId: userId, // Use the validated userId
+        userId: userId,
         total: parseFloat(totalAmount),
         status: 'PENDING',
         paymentIntentId: paymentId || orderId,
@@ -86,9 +83,9 @@ const confirmOrder = async (req, res) => {
       }
     });
 
-    // Emit socket notification if available
-    if (global.emitToUser) {
-      global.emitToUser(userId, 'order-update', {
+    // ⭐ Send real-time notification via Pusher
+    if (global.sendOrderUpdate) {
+      await global.sendOrderUpdate(userId, {
         orderId: order.id,
         status: 'PENDING',
         message: `Your order #${order.id} has been placed successfully!`,
@@ -174,7 +171,6 @@ const getOrderById = async (req, res) => {
       return res.status(404).json({ error: 'Order not found' });
     }
 
-    // Check authorization
     if (req.user.role !== 'VENDOR' && order.userId !== req.user.id) {
       return res.status(403).json({ error: 'Unauthorized to view this order' });
     }
@@ -245,8 +241,9 @@ const updateOrderStatus = async (req, res) => {
       'CANCELLED': `Your order #${orderId} has been cancelled`
     };
 
-    if (global.emitToUser) {
-      global.emitToUser(existingOrder.userId, 'order-update', {
+    // ⭐ Send real-time notification via Pusher
+    if (global.sendOrderUpdate) {
+      await global.sendOrderUpdate(existingOrder.userId, {
         orderId,
         status,
         message: statusMessages[status],
@@ -278,7 +275,6 @@ const deleteOrder = async (req, res) => {
       return res.status(404).json({ error: 'Order not found' });
     }
 
-    // Check authorization
     if (req.user.role !== 'VENDOR' && order.userId !== req.user.id) {
       return res.status(403).json({ error: 'Unauthorized to delete this order' });
     }
@@ -290,8 +286,9 @@ const deleteOrder = async (req, res) => {
     await prisma.orderItem.deleteMany({ where: { orderId } });
     await prisma.order.delete({ where: { id: orderId } });
 
-    if (req.user.role === 'VENDOR' && global.emitToUser) {
-      global.emitToUser(order.userId, 'order-update', {
+    // ⭐ Send cancellation notification via Pusher
+    if (req.user.role === 'VENDOR' && global.sendOrderUpdate) {
+      await global.sendOrderUpdate(order.userId, {
         orderId,
         status: 'CANCELLED',
         message: `Your order #${orderId} has been cancelled by the vendor`,
