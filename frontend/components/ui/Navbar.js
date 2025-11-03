@@ -2,7 +2,7 @@
 import { Search, Bell, ShoppingCart, User, Menu, X, LayoutDashboard, BellOff } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
-import { usePusher as useSocket } from '@/contexts/PusherContext';
+import { useSocket } from '@/contexts/PusherContext';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
@@ -20,7 +20,7 @@ export default function Navbar() {
   const notificationRef = useRef(null);
   const mobileMenuRef = useRef(null);
 
-  // ⭐ Check notification permission on mount
+  // Check notification permission on mount
   useEffect(() => {
     if ('Notification' in window) {
       setNotificationPermission(Notification.permission);
@@ -44,7 +44,7 @@ export default function Navbar() {
 
   // Prevent body scroll when mobile menu is open
   useEffect(() => {
-    if (showMobileMenu) {
+    if (showMobileMenu || showNotifications) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
@@ -52,16 +52,15 @@ export default function Navbar() {
     return () => {
       document.body.style.overflow = 'unset';
     };
-  }, [showMobileMenu]);
+  }, [showMobileMenu, showNotifications]);
 
-  // ⭐ Request notification permission
+  // Request notification permission
   const requestNotificationPermission = async () => {
     if ('Notification' in window) {
       const permission = await Notification.requestPermission();
       setNotificationPermission(permission);
       
       if (permission === 'granted') {
-        // Show success message
         alert('✅ Notifications enabled! You\'ll now receive order updates.');
       } else if (permission === 'denied') {
         alert('❌ Notifications blocked. Please enable them in your browser settings to receive order updates.');
@@ -71,10 +70,9 @@ export default function Navbar() {
     }
   };
 
-  // ⭐ Handle notification button click
+  // Handle notification button click
   const handleNotificationClick = () => {
     if ('Notification' in window && Notification.permission === 'default') {
-      // Show alert to enable notifications
       const enable = confirm(
         '🔔 Enable browser notifications to get real-time updates about your orders!\n\nClick OK to enable notifications.'
       );
@@ -82,7 +80,6 @@ export default function Navbar() {
         requestNotificationPermission();
       }
     } else if ('Notification' in window && Notification.permission === 'denied') {
-      // Show instructions to enable in settings
       alert(
         '🔔 Notifications are blocked!\n\n' +
         'To enable notifications:\n' +
@@ -93,7 +90,6 @@ export default function Navbar() {
       );
     }
     
-    // Toggle notifications panel
     setShowNotifications(!showNotifications);
   };
 
@@ -104,7 +100,7 @@ export default function Navbar() {
     }
   };
 
-  // ⭐ Format timestamp for better readability
+  // Format timestamp for better readability
   const formatTimestamp = (timestamp) => {
     const date = new Date(timestamp);
     const now = new Date();
@@ -173,7 +169,10 @@ export default function Navbar() {
 
                   {/* Mobile Menu Toggle */}
                   <button 
-                    onClick={() => setShowMobileMenu(!showMobileMenu)}
+                    onClick={() => {
+                      setShowMobileMenu(!showMobileMenu);
+                      setShowNotifications(false); // Close notifications when opening menu
+                    }}
                     className="md:hidden p-2 hover:bg-muted rounded-full transition-colors"
                     aria-label="Toggle menu"
                   >
@@ -183,7 +182,7 @@ export default function Navbar() {
                   {/* Desktop Icons - Only for Customers */}
                   {user.role !== 'VENDOR' && (
                     <div className="hidden md:flex items-center gap-4">
-                      {/* ⭐ Notifications Dropdown */}
+                      {/* Notifications Dropdown */}
                       <div className="relative" ref={notificationRef}>
                         <button 
                           onClick={handleNotificationClick}
@@ -202,7 +201,7 @@ export default function Navbar() {
                           )}
                         </button>
 
-                        {/* ⭐ Notifications Dropdown */}
+                        {/* Notifications Dropdown */}
                         {showNotifications && (
                           <div className="absolute right-0 mt-2 w-96 bg-card border border-border rounded-xl shadow-2xl max-h-[32rem] overflow-hidden z-50">
                             {/* Header */}
@@ -243,7 +242,7 @@ export default function Navbar() {
                                 notifications.map((notification) => (
                                   <Link
                                     key={notification.id}
-                                    href={`/order-tracking?orderId=${notification.orderId}`}
+                                    href={notification.orderId ? `/order-tracking?orderId=${notification.orderId}` : '#'}
                                     onClick={() => {
                                       markAsRead(notification.id);
                                       setShowNotifications(false);
@@ -257,9 +256,11 @@ export default function Navbar() {
                                         !notification.read ? 'bg-secondary' : 'bg-transparent'
                                       }`} />
                                       <div className="flex-1 min-w-0">
-                                        <p className="font-semibold text-foreground text-sm mb-1">
-                                          Order #{notification.orderId}
-                                        </p>
+                                        {notification.orderId && (
+                                          <p className="font-semibold text-foreground text-sm mb-1">
+                                            Order #{notification.orderId}
+                                          </p>
+                                        )}
                                         <p className="text-sm text-muted-foreground mb-1 line-clamp-2">
                                           {notification.message}
                                         </p>
@@ -273,7 +274,7 @@ export default function Navbar() {
                               )}
                             </div>
 
-                            {/* ⭐ Footer with permission status */}
+                            {/* Footer with permission status */}
                             {notificationPermission !== 'granted' && (
                               <div className="p-3 bg-muted/50 border-t border-border">
                                 <button
@@ -364,7 +365,7 @@ export default function Navbar() {
         </div>
       </header>
 
-      {/* ⭐ Mobile Menu - Full Screen Overlay */}
+      {/* Mobile Menu - Full Screen Overlay */}
       {showMobileMenu && (
         <div className="fixed inset-0 z-50 md:hidden">
           {/* Backdrop */}
@@ -376,12 +377,12 @@ export default function Navbar() {
           {/* Menu Content */}
           <div 
             ref={mobileMenuRef}
-            className="absolute top-0 right-0 h-full w-[80%] max-w-sm bg-card shadow-elegant-lg"
+            className="absolute top-0 right-0 h-full w-[80%] max-w-sm bg-card shadow-elegant-lg overflow-y-auto"
             style={{ animation: 'slideInRight 0.3s ease-out' }}
           >
             <div className="flex flex-col h-full">
               {/* Header */}
-              <div className="p-4 border-b border-border flex items-center justify-between">
+              <div className="p-4 border-b border-border flex items-center justify-between sticky top-0 bg-card z-10">
                 <h2 className="font-bold text-lg">Menu</h2>
                 <button
                   onClick={() => setShowMobileMenu(false)}
@@ -426,7 +427,7 @@ export default function Navbar() {
                       <button
                         onClick={() => {
                           setShowMobileMenu(false);
-                          handleNotificationClick();
+                          setShowNotifications(true);
                         }}
                         className="w-full flex items-center gap-3 p-3 hover:bg-muted rounded-lg transition-colors"
                       >
@@ -450,6 +451,110 @@ export default function Navbar() {
           </div>
         </div>
       )}
+
+      {/* ⭐ NEW: Mobile Notifications Panel */}
+      {showNotifications && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => setShowNotifications(false)}
+          />
+          
+          {/* Notifications Panel */}
+          <div className="absolute top-0 right-0 h-full w-full max-w-sm bg-card shadow-elegant-lg overflow-hidden">
+            {/* Header */}
+            <div className="p-4 border-b border-border flex items-center justify-between sticky top-0 bg-card z-10">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setShowNotifications(false)}
+                  className="p-2 hover:bg-muted rounded-full transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+                <h3 className="font-bold text-foreground">Notifications</h3>
+              </div>
+              {notifications.length > 0 && (
+                <button
+                  onClick={markAllAsRead}
+                  className="text-xs text-secondary hover:underline font-semibold"
+                >
+                  Mark all read
+                </button>
+              )}
+            </div>
+            
+            {/* Notifications List */}
+            <div className="overflow-y-auto h-[calc(100%-5rem)] divide-y divide-border">
+              {notifications.length === 0 ? (
+                <div className="p-8 text-center">
+                  <Bell className="w-16 h-16 text-muted-foreground mx-auto mb-4 opacity-50" />
+                  <p className="text-muted-foreground font-medium mb-2">No notifications yet</p>
+                  <p className="text-sm text-muted-foreground">
+                    You'll be notified when your order status changes
+                  </p>
+                </div>
+              ) : (
+                notifications.map((notification) => (
+                  <Link
+                    key={notification.id}
+                    href={notification.orderId ? `/order-tracking?orderId=${notification.orderId}` : '#'}
+                    onClick={() => {
+                      markAsRead(notification.id);
+                      setShowNotifications(false);
+                    }}
+                    className={`block p-4 hover:bg-muted transition-colors ${
+                      !notification.read ? 'bg-secondary/5 border-l-4 border-l-secondary' : ''
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${
+                        !notification.read ? 'bg-secondary' : 'bg-transparent'
+                      }`} />
+                      <div className="flex-1 min-w-0">
+                        {notification.orderId && (
+                          <p className="font-semibold text-foreground text-sm mb-1">
+                            Order #{notification.orderId}
+                          </p>
+                        )}
+                        <p className="text-sm text-muted-foreground mb-1">
+                          {notification.message}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatTimestamp(notification.timestamp)}
+                        </p>
+                      </div>
+                    </div>
+                  </Link>
+                ))
+              )}
+            </div>
+
+            {/* Footer */}
+            {notificationPermission !== 'granted' && (
+              <div className="absolute bottom-0 left-0 right-0 p-3 bg-muted/50 border-t border-border">
+                <button
+                  onClick={requestNotificationPermission}
+                  className="w-full text-xs text-center text-secondary hover:underline font-semibold"
+                >
+                  🔔 Enable browser notifications
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      <style jsx global>{`
+        @keyframes slideInRight {
+          from {
+            transform: translateX(100%);
+          }
+          to {
+            transform: translateX(0);
+          }
+        }
+      `}</style>
     </>
   );
 }
