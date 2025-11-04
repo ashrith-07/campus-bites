@@ -99,20 +99,27 @@ export default function VendorDashboard() {
 
             {/* Right: Desktop Actions */}
             <div className="hidden md:flex items-center gap-3">
-              {/* Store Toggle */}
+              {/* Store Toggle - Better Design */}
               <div className="flex items-center gap-2 px-3 py-2 bg-muted rounded-lg">
                 <span className="text-sm font-semibold whitespace-nowrap">Store:</span>
                 <button
                   onClick={toggleStoreStatus}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    storeStatus ? 'bg-success' : 'bg-destructive'
+                  className={`relative inline-flex h-7 w-14 items-center rounded-full transition-all duration-300 ${
+                    storeStatus 
+                      ? 'bg-gradient-to-r from-green-500 to-green-600 shadow-lg shadow-green-500/30' 
+                      : 'bg-gradient-to-r from-red-500 to-red-600 shadow-lg shadow-red-500/30'
                   }`}
+                  title={storeStatus ? 'Click to close store' : 'Click to open store'}
                 >
-                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    storeStatus ? 'translate-x-6' : 'translate-x-1'
-                  }`} />
+                  <span
+                    className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition-transform duration-300 ${
+                      storeStatus ? 'translate-x-8' : 'translate-x-1'
+                    }`}
+                  />
                 </button>
-                <span className={`text-sm font-bold ${storeStatus ? 'text-success' : 'text-destructive'}`}>
+                <span className={`text-sm font-bold min-w-[45px] ${
+                  storeStatus ? 'text-green-600' : 'text-red-600'
+                }`}>
                   {storeStatus ? 'Open' : 'Closed'}
                 </span>
               </div>

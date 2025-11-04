@@ -1,17 +1,13 @@
+'use client';
+
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { CartProvider } from '@/contexts/CartContext';
-import { PusherProvider } from '@/contexts/PusherContext'; // ⭐ Updated import
-import Navbar from '@/components/ui/Navbar';
-import NotificationToast from '@/components/ui/NotificationToast';
+import { PusherProvider } from '@/contexts/PusherContext';
+import ConditionalLayout from '@/components/ConditionalLayout';
 
 const inter = Inter({ subsets: ['latin'] });
-
-export const metadata = {
-  title: 'Campus Bites',
-  description: 'Order delicious food on campus',
-};
 
 export default function RootLayout({ children }) {
   return (
@@ -20,9 +16,9 @@ export default function RootLayout({ children }) {
         <AuthProvider>
           <CartProvider>
             <PusherProvider>
-              <Navbar />
-              {children}
-              <NotificationToast />
+              <ConditionalLayout>
+                {children}
+              </ConditionalLayout>
             </PusherProvider>
           </CartProvider>
         </AuthProvider>
