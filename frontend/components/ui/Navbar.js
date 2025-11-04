@@ -1,5 +1,5 @@
 'use client';
-import { Search, Bell, ShoppingCart, User, Menu, X, LayoutDashboard, BellOff } from 'lucide-react';
+import { Search, Bell, ShoppingCart, User, Menu, X, LayoutDashboard, BellOff, LogOut } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
 import { useSocket } from '@/contexts/PusherContext';
@@ -8,7 +8,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
 
 export default function Navbar() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { getCartCount, setShowCart } = useCart();
   const { unreadCount, notifications, markAsRead, markAllAsRead } = useSocket();
   const router = useRouter();

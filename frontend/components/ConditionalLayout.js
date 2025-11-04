@@ -11,13 +11,15 @@ export default function ConditionalLayout({ children }) {
   const { user } = useAuth();
   const { storeStatus } = useSocket();
 
-  // Pages that should never show navbar
+  // Pages that should NEVER show the main navbar
   const noNavbarPages = [
     '/auth/login',
     '/auth/signup',
     '/order-tracking',
     '/checkout',
-    '/order-success'
+    '/order-success',
+    '/vendor',  // ✅ Hide main navbar on vendor dashboard
+    '/profile'  // ✅ Hide main navbar on profile page
   ];
 
   // Check if current page should hide navbar
