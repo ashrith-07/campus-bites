@@ -4,65 +4,55 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePusher as useSocket } from '@/contexts/PusherContext';
-import { Package, ChefHat, BarChart3, LogOut } from 'lucide-react';
+import { Package, ChefHat, BarChart3, LogOut, ArrowLeft, Menu, X } from 'lucide-react';
+import Link from 'next/link';
 
 export default function VendorDashboard() {
   const router = useRouter();
   const { user, token, logout, loading: authLoading } = useAuth();
   const { storeStatus, updateStoreStatus } = useSocket();
   const [activeTab, setActiveTab] = useState('orders');
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
 
   useEffect(() => {
     if (authLoading) return;
-
     if (!token) {
       router.push('/auth/login');
       return;
     }
-
     if (user && user.role !== 'VENDOR') {
       router.push('/');
       return;
     }
   }, [token, user, authLoading, router]);
 
-const toggleStoreStatus = async () => {
-  const newStatus = !storeStatus;
-  
-
-  updateStoreStatus(newStatus);
-  
-  try {
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://campus-bites-server.vercel.app/api';
+  const toggleStoreStatus = async () => {
+    const newStatus = !storeStatus;
+    updateStoreStatus(newStatus);
     
-    const response = await fetch(`${API_URL}/store/status`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({ isOpen: newStatus })
-    });
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://campus-bites-server.vercel.app/api';
+      const response = await fetch(`${API_URL}/store/status`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ isOpen: newStatus })
+      });
 
-    if (response.ok) {
-      const data = await response.json();
-      console.log('✅ Store status updated:', data.isOpen);
-      // Confirm with server response
-      updateStoreStatus(data.isOpen);
-    } else {
-      // Revert on error
+      if (response.ok) {
+        const data = await response.json();
+        updateStoreStatus(data.isOpen);
+      } else {
+        updateStoreStatus(!newStatus);
+        alert('Failed to update store status');
+      }
+    } catch (error) {
       updateStoreStatus(!newStatus);
-      const error = await response.json();
-      console.error('❌ Failed to update store status:', error);
       alert('Failed to update store status');
     }
-  } catch (error) {
-    // Revert on error
-    updateStoreStatus(!newStatus);
-    console.error('❌ Error updating store status:', error);
-    alert('Failed to update store status. Please check your connection.');
-  }
-};
+  };
 
   const handleLogout = () => {
     logout();
@@ -84,31 +74,43 @@ const toggleStoreStatus = async () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="bg-card border-b border-border shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <h1 className="font-serif text-xl sm:text-2xl font-bold text-foreground">Vendor Dashboard</h1>
-              <p className="text-sm text-muted-foreground">Manage your orders, menu items, and track status</p>
+      {/* Clean Vendor Header */}
+      <header className="bg-card border-b border-border sticky top-0 z-40 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
+          <div className="flex items-center justify-between gap-3 sm:gap-4">
+            {/* Left: Back + Title */}
+            <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
+              <Link
+                href="/"
+                className="p-2 hover:bg-muted rounded-full transition-colors flex-shrink-0"
+                title="Back to Home"
+              >
+                <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6" />
+              </Link>
+              <div className="min-w-0">
+                <h1 className="font-serif text-base sm:text-xl font-bold text-foreground truncate">
+                  Vendor Dashboard
+                </h1>
+                <p className="text-xs text-muted-foreground hidden sm:block">
+                  Manage orders and menu
+                </p>
+              </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              {/* Store Status Toggle */}
-              <div className="flex items-center gap-3 px-4 py-2 bg-muted rounded-lg">
-                <span className="text-sm font-semibold">Store:</span>
+            {/* Right: Desktop Actions */}
+            <div className="hidden md:flex items-center gap-3">
+              {/* Store Toggle */}
+              <div className="flex items-center gap-2 px-3 py-2 bg-muted rounded-lg">
+                <span className="text-sm font-semibold whitespace-nowrap">Store:</span>
                 <button
                   onClick={toggleStoreStatus}
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                     storeStatus ? 'bg-success' : 'bg-destructive'
                   }`}
-                  title={storeStatus ? 'Click to close store' : 'Click to open store'}
                 >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      storeStatus ? 'translate-x-6' : 'translate-x-1'
-                    }`}
-                  />
+                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    storeStatus ? 'translate-x-6' : 'translate-x-1'
+                  }`} />
                 </button>
                 <span className={`text-sm font-bold ${storeStatus ? 'text-success' : 'text-destructive'}`}>
                   {storeStatus ? 'Open' : 'Closed'}
@@ -117,55 +119,109 @@ const toggleStoreStatus = async () => {
 
               <button
                 onClick={handleLogout}
-                className="flex items-center gap-2 px-4 py-2 bg-destructive text-destructive-foreground rounded-lg font-semibold hover:opacity-90 transition"
+                className="flex items-center gap-2 px-4 py-2 bg-destructive text-destructive-foreground rounded-lg font-semibold hover:opacity-90 transition text-sm"
               >
                 <LogOut className="w-4 h-4" />
-                <span className="hidden sm:inline">Logout</span>
+                Logout
               </button>
+            </div>
+
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setShowMobileMenu(!showMobileMenu)}
+              className="md:hidden p-2 hover:bg-muted rounded-full transition-colors flex-shrink-0"
+            >
+              {showMobileMenu ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
+          </div>
+
+          {/* Mobile Store Status */}
+          <div className="md:hidden mt-3 flex items-center justify-between p-3 bg-muted rounded-lg">
+            <span className="text-sm font-semibold">Store Status:</span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={toggleStoreStatus}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  storeStatus ? 'bg-success' : 'bg-destructive'
+                }`}
+              >
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  storeStatus ? 'translate-x-6' : 'translate-x-1'
+                }`} />
+              </button>
+              <span className={`text-sm font-bold ${storeStatus ? 'text-success' : 'text-destructive'}`}>
+                {storeStatus ? 'Open' : 'Closed'}
+              </span>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Tabs */}
-      <div className="max-w-7xl mx-auto px-6 py-6">
-        <div className="flex gap-4 mb-6 border-b border-border">
-          <button
-            onClick={() => setActiveTab('orders')}
-            className={`flex items-center gap-2 px-6 py-3 font-semibold transition-all border-b-2 ${
-              activeTab === 'orders'
-                ? 'border-secondary text-secondary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <Package className="w-5 h-5" />
-            Orders
-          </button>
-          <button
-            onClick={() => setActiveTab('menu')}
-            className={`flex items-center gap-2 px-6 py-3 font-semibold transition-all border-b-2 ${
-              activeTab === 'menu'
-                ? 'border-secondary text-secondary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <ChefHat className="w-5 h-5" />
-            Menu Items
-          </button>
-          <button
-            onClick={() => setActiveTab('status')}
-            className={`flex items-center gap-2 px-6 py-3 font-semibold transition-all border-b-2 ${
-              activeTab === 'status'
-                ? 'border-secondary text-secondary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <BarChart3 className="w-5 h-5" />
-            Status
-          </button>
+      {/* Mobile Menu Overlay */}
+      {showMobileMenu && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setShowMobileMenu(false)} />
+          <div className="absolute top-0 right-0 h-full w-64 bg-card shadow-lg p-4 overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="font-bold text-lg">Menu</h2>
+              <button onClick={() => setShowMobileMenu(false)} className="p-2 hover:bg-muted rounded-full">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-2 px-4 py-3 bg-destructive text-destructive-foreground rounded-lg font-semibold hover:opacity-90 transition"
+            >
+              <LogOut className="w-5 h-5" />
+              Logout
+            </button>
+          </div>
         </div>
+      )}
 
-        {/* Tab Content */}
+      {/* Tabs */}
+      <div className="border-b border-border bg-card sticky top-[65px] sm:top-[73px] z-30">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <div className="flex gap-1 overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
+            <button
+              onClick={() => setActiveTab('orders')}
+              className={`flex items-center gap-2 px-4 sm:px-6 py-3 font-semibold transition-all border-b-2 whitespace-nowrap text-xs sm:text-base ${
+                activeTab === 'orders'
+                  ? 'border-secondary text-secondary'
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Package className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span>Orders</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('menu')}
+              className={`flex items-center gap-2 px-4 sm:px-6 py-3 font-semibold transition-all border-b-2 whitespace-nowrap text-xs sm:text-base ${
+                activeTab === 'menu'
+                  ? 'border-secondary text-secondary'
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <ChefHat className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span>Menu</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('status')}
+              className={`flex items-center gap-2 px-4 sm:px-6 py-3 font-semibold transition-all border-b-2 whitespace-nowrap text-xs sm:text-base ${
+                activeTab === 'status'
+                  ? 'border-secondary text-secondary'
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span>Stats</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Tab Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
         {activeTab === 'orders' && <OrdersManagement token={token} />}
         {activeTab === 'menu' && <MenuManagement token={token} />}
         {activeTab === 'status' && <StatusOverview token={token} />}

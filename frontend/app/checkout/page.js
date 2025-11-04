@@ -13,24 +13,18 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [initializing, setInitializing] = useState(true);
-  
-  // ⭐ FIX: Track if order was successfully placed
   const orderPlacedRef = useRef(false);
 
   useEffect(() => {
     if (authLoading) return;
-
     if (!token) {
       router.push('/auth/login');
       return;
     }
-
-    // ⭐ FIX: Don't redirect to home if order was placed successfully
     if (cart.length === 0 && !orderPlacedRef.current) {
       router.push('/');
       return;
     }
-
     setInitializing(false);
   }, [token, cart, router, authLoading]);
 
@@ -45,7 +39,6 @@ export default function CheckoutPage() {
     );
   }
 
-  // ⭐ FIX: Allow rendering if order was placed
   if (!token || (cart.length === 0 && !orderPlacedRef.current)) {
     return null;
   }
@@ -61,9 +54,6 @@ export default function CheckoutPage() {
       
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://campus-bites-server.vercel.app/api';
       
-      console.log('Starting checkout...');
-
-      // Step 1: Create checkout (get mock payment order)
       const checkoutResponse = await fetch(`${API_URL}/orders/checkout`, {
         method: 'POST',
         headers: {
@@ -80,31 +70,14 @@ export default function CheckoutPage() {
         })
       });
 
-      const contentType = checkoutResponse.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const text = await checkoutResponse.text();
-        console.error('Non-JSON response:', text.substring(0, 200));
-        throw new Error('Server returned an invalid response. Please try again.');
-      }
-
-      if (!checkoutResponse.ok) {
-        const errorData = await checkoutResponse.json();
-        throw new Error(errorData.error || 'Checkout failed');
-      }
-
+      if (!checkoutResponse.ok) throw new Error('Checkout failed');
       const checkoutData = await checkoutResponse.json();
-      console.log('Checkout response:', checkoutData);
 
-      // Step 2: Simulate payment (2 second delay for realism)
       await new Promise(resolve => setTimeout(resolve, 2000));
 
-      // Generate mock payment credentials
       const mockPaymentId = `pay_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const mockSignature = `sig_${Math.random().toString(36).substr(2, 16)}`;
 
-      console.log('Mock payment completed:', mockPaymentId);
-
-      // Step 3: Confirm order with mock payment
       const confirmResponse = await fetch(`${API_URL}/orders/confirm`, {
         method: 'POST',
         headers: {
@@ -124,28 +97,11 @@ export default function CheckoutPage() {
         })
       });
 
-      const confirmContentType = confirmResponse.headers.get('content-type');
-      if (!confirmContentType || !confirmContentType.includes('application/json')) {
-        const text = await confirmResponse.text();
-        console.error('Non-JSON response:', text.substring(0, 200));
-        throw new Error('Server returned an invalid response. Please try again.');
-      }
-
-      if (!confirmResponse.ok) {
-        const errorData = await confirmResponse.json();
-        throw new Error(errorData.error || 'Failed to confirm order');
-      }
-
+      if (!confirmResponse.ok) throw new Error('Failed to confirm order');
       const confirmData = await confirmResponse.json();
-      console.log('Order confirmed:', confirmData);
 
-      // ⭐ FIX: Mark order as placed before clearing cart
       orderPlacedRef.current = true;
-
-      // Clear cart and redirect
       clearCart();
-      
-      // ⭐ FIX: Use push instead of replace to allow back navigation
       router.push(`/order-success?orderId=${confirmData.order.id}`);
       
     } catch (error) {
@@ -153,92 +109,90 @@ export default function CheckoutPage() {
       setError(error.message || 'Failed to place order. Please try again.');
       setLoading(false);
     }
-    // ⭐ FIX: Don't set loading to false here - let the page unmount
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-6">
       {/* Header */}
       <header className="bg-card border-b sticky top-0 z-40 shadow-sm">
-        <div className="max-w-5xl mx-auto px-6 py-4">
-          <div className="flex items-center gap-4">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
+          <div className="flex items-center gap-3 sm:gap-4">
             <button
               onClick={() => router.back()}
-              className="p-2 hover:bg-muted rounded-full transition-colors"
+              className="p-2 hover:bg-muted rounded-full transition-colors flex-shrink-0"
             >
-              <ArrowLeft className="w-6 h-6" />
+              <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6" />
             </button>
-            <div>
-              <h1 className="font-serif text-2xl font-bold text-foreground">Checkout</h1>
-              <p className="text-sm text-muted-foreground">Complete your order</p>
+            <div className="min-w-0">
+              <h1 className="font-serif text-lg sm:text-2xl font-bold text-foreground truncate">Checkout</h1>
+              <p className="text-xs sm:text-sm text-muted-foreground">Complete your order</p>
             </div>
           </div>
         </div>
       </header>
 
-      <div className="max-w-5xl mx-auto px-6 py-8">
-        <div className="grid md:grid-cols-2 gap-8">
-          {/* Left Column - Order Summary */}
-          <div className="space-y-6">
-            {/* Order Summary Card */}
-            <div className="bg-card rounded-2xl p-6 shadow-elegant border border-border">
-              <h2 className="font-serif text-2xl font-bold text-foreground mb-6">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
+        <div className="grid lg:grid-cols-2 gap-4 sm:gap-6">
+          {/* Order Summary */}
+          <div className="space-y-4 sm:space-y-6">
+            <div className="bg-card rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-elegant border border-border">
+              <h2 className="font-serif text-lg sm:text-2xl font-bold text-foreground mb-4 sm:mb-6">
                 Order Summary
               </h2>
 
-              <div className="space-y-4 mb-6">
+              <div className="space-y-3 sm:space-y-4 mb-4 sm:mb-6">
                 {cart.map((item) => (
-                  <div key={item.id} className="flex justify-between items-start pb-4 border-b border-border last:border-0 last:pb-0">
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-foreground">{item.name}</h3>
-                      <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
+                  <div key={item.id} className="flex justify-between items-start pb-3 sm:pb-4 border-b border-border last:border-0 last:pb-0 gap-3">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-foreground text-sm sm:text-base truncate">{item.name}</h3>
+                      <p className="text-xs sm:text-sm text-muted-foreground">Qty: {item.quantity}</p>
                     </div>
-                    <span className="font-semibold text-foreground">
+                    <span className="font-semibold text-foreground text-sm sm:text-base whitespace-nowrap">
                       ₹{(parseFloat(item.price) * item.quantity).toFixed(2)}
                     </span>
                   </div>
                 ))}
               </div>
 
-              <div className="space-y-3 pt-4 border-t border-border">
-                <div className="flex justify-between text-muted-foreground">
+              <div className="space-y-2 sm:space-y-3 pt-3 sm:pt-4 border-t border-border">
+                <div className="flex justify-between text-sm sm:text-base text-muted-foreground">
                   <span>Subtotal</span>
                   <span>₹{subtotal.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between text-muted-foreground">
+                <div className="flex justify-between text-sm sm:text-base text-muted-foreground">
                   <span>GST (5%)</span>
                   <span>₹{gst.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between items-center pt-3 border-t border-border">
-                  <span className="font-bold text-xl text-foreground">Total Amount</span>
-                  <span className="font-bold text-3xl text-secondary">₹{total.toFixed(2)}</span>
+                <div className="flex justify-between items-center pt-2 sm:pt-3 border-t border-border">
+                  <span className="font-bold text-base sm:text-xl text-foreground">Total</span>
+                  <span className="font-bold text-xl sm:text-3xl text-secondary">₹{total.toFixed(2)}</span>
                 </div>
               </div>
             </div>
 
-            {/* Pickup Details Card */}
-            <div className="bg-card rounded-2xl p-6 shadow-elegant border border-border">
-              <h2 className="font-serif text-xl font-bold text-foreground mb-6">
+            {/* Pickup Details */}
+            <div className="bg-card rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-elegant border border-border">
+              <h2 className="font-serif text-base sm:text-xl font-bold text-foreground mb-4 sm:mb-6">
                 Pickup Details
               </h2>
 
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 <div>
-                  <p className="text-sm text-muted-foreground mb-2">Ready for pickup in</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground mb-2">Ready for pickup in</p>
                   <div className="flex items-center gap-2">
-                    <Clock className="w-5 h-5 text-secondary" />
-                    <span className="text-2xl font-bold text-foreground">15-20 minutes</span>
+                    <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-secondary flex-shrink-0" />
+                    <span className="text-lg sm:text-2xl font-bold text-foreground">15-20 minutes</span>
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-border">
-                  <p className="text-sm text-muted-foreground mb-2">Pickup Location</p>
+                <div className="pt-3 sm:pt-4 border-t border-border">
+                  <p className="text-xs sm:text-sm text-muted-foreground mb-2">Pickup Location</p>
                   <div className="flex items-start gap-2">
-                    <MapPin className="w-5 h-5 text-secondary mt-1 flex-shrink-0" />
+                    <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-secondary mt-1 flex-shrink-0" />
                     <div>
-                      <p className="font-semibold text-foreground">Campus Canteen - Counter #3</p>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        You'll receive a notification when your order is ready
+                      <p className="font-semibold text-foreground text-sm sm:text-base">Campus Canteen - Counter #3</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+                        You'll receive a notification when ready
                       </p>
                     </div>
                   </div>
@@ -247,64 +201,60 @@ export default function CheckoutPage() {
             </div>
           </div>
 
-          {/* Right Column - Payment Method */}
-          <div className="space-y-6">
-            {/* Payment Method Card */}
-            <div className="bg-card rounded-2xl p-6 shadow-elegant border border-border">
-              <h2 className="font-serif text-2xl font-bold text-foreground mb-6">
+          {/* Payment Method */}
+          <div className="space-y-4 sm:space-y-6">
+            <div className="bg-card rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-elegant border border-border">
+              <h2 className="font-serif text-lg sm:text-2xl font-bold text-foreground mb-4 sm:mb-6">
                 Payment Method
               </h2>
 
               <div className="space-y-3">
-                {/* Razorpay Option */}
                 <label
-                  className={`flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                  className={`flex items-center justify-between p-3 sm:p-4 rounded-lg sm:rounded-xl border-2 cursor-pointer transition-all ${
                     paymentMethod === 'razorpay'
                       ? 'border-secondary bg-secondary/5'
                       : 'border-border hover:border-muted-foreground'
                   }`}
                 >
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
                     <input
                       type="radio"
                       name="payment"
                       value="razorpay"
                       checked={paymentMethod === 'razorpay'}
                       readOnly
-                      className="w-5 h-5 text-secondary accent-secondary"
+                      className="w-4 h-4 sm:w-5 sm:h-5 text-secondary accent-secondary flex-shrink-0"
                     />
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-secondary to-secondary/80 rounded-lg flex items-center justify-center">
-                        <CreditCard className="w-5 h-5 text-white" />
+                    <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-secondary to-secondary/80 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                       </div>
-                      <div>
-                        <p className="font-semibold text-foreground">Pay Online</p>
-                        <p className="text-xs text-muted-foreground">Secure payment with Razorpay</p>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-foreground text-sm sm:text-base">Pay Online</p>
+                        <p className="text-xs text-muted-foreground hidden sm:block">Secure payment</p>
                       </div>
                     </div>
                   </div>
-                  <span className="bg-secondary text-white text-xs font-semibold px-3 py-1 rounded-full">
+                  <span className="bg-secondary text-white text-xs font-semibold px-2 py-1 rounded-full whitespace-nowrap ml-2">
                     Recommended
                   </span>
                 </label>
               </div>
 
-              {/* Error Message */}
               {error && (
-                <div className="mt-4 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
-                  <p className="text-sm text-destructive">{error}</p>
+                <div className="mt-3 sm:mt-4 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+                  <p className="text-xs sm:text-sm text-destructive">{error}</p>
                 </div>
               )}
 
-              {/* Place Order Button */}
               <button
                 onClick={handlePlaceOrder}
                 disabled={loading}
-                className="w-full mt-6 bg-secondary text-secondary-foreground py-4 rounded-xl font-bold text-lg hover:opacity-90 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full mt-4 sm:mt-6 bg-secondary text-secondary-foreground py-3 sm:py-4 rounded-lg sm:rounded-xl font-bold text-base sm:text-lg hover:opacity-90 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <span className="flex items-center justify-center gap-2">
-                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                    <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-2 border-white border-t-transparent"></div>
                     Processing...
                   </span>
                 ) : (
@@ -312,9 +262,8 @@ export default function CheckoutPage() {
                 )}
               </button>
 
-              {/* Security Badge */}
-              <div className="mt-4 flex items-center justify-center gap-2 text-xs text-muted-foreground">
-                <Lock className="w-4 h-4" />
+              <div className="mt-3 sm:mt-4 flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                <Lock className="w-3 h-3 sm:w-4 sm:h-4" />
                 <span>Secure ordering system</span>
               </div>
             </div>

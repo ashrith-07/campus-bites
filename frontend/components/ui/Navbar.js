@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
 import { useSocket } from '@/contexts/PusherContext';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
 
 export default function Navbar() {
@@ -12,6 +12,7 @@ export default function Navbar() {
   const { getCartCount, setShowCart } = useCart();
   const { unreadCount, notifications, markAsRead, markAllAsRead } = useSocket();
   const router = useRouter();
+  const pathname = usePathname();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -19,6 +20,9 @@ export default function Navbar() {
   
   const notificationRef = useRef(null);
   const mobileMenuRef = useRef(null);
+
+  // Check if we're on vendor page
+  const isVendorPage = pathname === '/vendor';
 
   // Check notification permission on mount
   useEffect(() => {
@@ -157,7 +161,7 @@ export default function Navbar() {
               {user ? (
                 <>
                   {/* Vendor Dashboard Button - Desktop */}
-                  {user.role === 'VENDOR' && (
+                  {user.role === 'VENDOR' && !isVendorPage && (
                     <Link
                       href="/vendor"
                       className="hidden md:flex items-center gap-2 px-4 py-2 bg-secondary text-secondary-foreground rounded-lg font-semibold hover:opacity-90 transition"
@@ -397,14 +401,16 @@ export default function Navbar() {
                 <div className="space-y-2">
                   {user?.role === 'VENDOR' ? (
                     <>
-                      <Link 
-                        href="/vendor"
-                        onClick={() => setShowMobileMenu(false)}
-                        className="flex items-center gap-3 p-3 hover:bg-muted rounded-lg transition-colors"
-                      >
-                        <LayoutDashboard className="w-5 h-5" />
-                        <span className="font-medium">Vendor Dashboard</span>
-                      </Link>
+                      {!isVendorPage && (
+                        <Link 
+                          href="/vendor"
+                          onClick={() => setShowMobileMenu(false)}
+                          className="flex items-center gap-3 p-3 hover:bg-muted rounded-lg transition-colors"
+                        >
+                          <LayoutDashboard className="w-5 h-5" />
+                          <span className="font-medium">Vendor Dashboard</span>
+                        </Link>
+                      )}
                       <Link 
                         href="/profile"
                         onClick={() => setShowMobileMenu(false)}
@@ -476,8 +482,11 @@ export default function Navbar() {
               </div>
               {notifications.length > 0 && (
                 <button
-                  onClick={markAllAsRead}
-                  className="text-xs text-secondary hover:underline font-semibold"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    markAllAsRead();
+                  }}
+                  className="text-xs text-secondary hover:underline font-semibold active:opacity-70"
                 >
                   Mark all read
                 </button>
@@ -496,14 +505,16 @@ export default function Navbar() {
                 </div>
               ) : (
                 notifications.map((notification) => (
-                  <Link
+                  <button
                     key={notification.id}
-                    href={notification.orderId ? `/order-tracking?orderId=${notification.orderId}` : '#'}
                     onClick={() => {
                       markAsRead(notification.id);
                       setShowNotifications(false);
+                      if (notification.orderId) {
+                        router.push(`/order-tracking?orderId=${notification.orderId}`);
+                      }
                     }}
-                    className={`block p-4 hover:bg-muted transition-colors ${
+                    className={`w-full text-left block p-4 hover:bg-muted transition-colors ${
                       !notification.read ? 'bg-secondary/5 border-l-4 border-l-secondary' : ''
                     }`}
                   >
@@ -525,7 +536,7 @@ export default function Navbar() {
                         </p>
                       </div>
                     </div>
-                  </Link>
+                  </button>
                 ))
               )}
             </div>
