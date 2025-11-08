@@ -1,11 +1,21 @@
-'use client';
-import { Search, Bell, ShoppingCart, User, Menu, X, LayoutDashboard, BellOff, LogOut } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
-import { useCart } from '@/contexts/CartContext';
-import { useSocket } from '@/contexts/PusherContext';
-import Link from 'next/link';
-import { useRouter, usePathname } from 'next/navigation';
-import { useState, useEffect, useRef } from 'react';
+"use client";
+import {
+  Search,
+  Bell,
+  ShoppingCart,
+  User,
+  Menu,
+  X,
+  LayoutDashboard,
+  BellOff,
+  LogOut,
+} from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useCart } from "@/contexts/CartContext";
+import { useSocket } from "@/contexts/PusherContext";
+import Link from "next/link";
+import { useRouter, usePathname } from "next/navigation";
+import { useState, useEffect, useRef } from "react";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -15,18 +25,19 @@ export default function Navbar() {
   const pathname = usePathname();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [notificationPermission, setNotificationPermission] = useState('default');
-  
+  const [searchQuery, setSearchQuery] = useState("");
+  const [notificationPermission, setNotificationPermission] =
+    useState("default");
+
   const notificationRef = useRef(null);
   const mobileMenuRef = useRef(null);
 
   // Check if we're on vendor page
-  const isVendorPage = pathname === '/vendor';
+  const isVendorPage = pathname === "/vendor";
 
   // Check notification permission on mount
   useEffect(() => {
-    if ('Notification' in window) {
+    if ("Notification" in window) {
       setNotificationPermission(Notification.permission);
     }
   }, []);
@@ -34,66 +45,77 @@ export default function Navbar() {
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+      if (
+        notificationRef.current &&
+        !notificationRef.current.contains(event.target)
+      ) {
         setShowNotifications(false);
       }
-      if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target)) {
+      if (
+        mobileMenuRef.current &&
+        !mobileMenuRef.current.contains(event.target)
+      ) {
         setShowMobileMenu(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   // Prevent body scroll when mobile menu is open
   useEffect(() => {
     if (showMobileMenu || showNotifications) {
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = "unset";
     }
     return () => {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = "unset";
     };
   }, [showMobileMenu, showNotifications]);
 
   // Request notification permission
   const requestNotificationPermission = async () => {
-    if ('Notification' in window) {
+    if ("Notification" in window) {
       const permission = await Notification.requestPermission();
       setNotificationPermission(permission);
-      
-      if (permission === 'granted') {
-        alert('✅ Notifications enabled! You\'ll now receive order updates.');
-      } else if (permission === 'denied') {
-        alert('❌ Notifications blocked. Please enable them in your browser settings to receive order updates.');
+
+      if (permission === "granted") {
+        alert("✅ Notifications enabled! You'll now receive order updates.");
+      } else if (permission === "denied") {
+        alert(
+          "❌ Notifications blocked. Please enable them in your browser settings to receive order updates."
+        );
       }
     } else {
-      alert('❌ Your browser doesn\'t support notifications.');
+      alert("❌ Your browser doesn't support notifications.");
     }
   };
 
   // Handle notification button click
   const handleNotificationClick = () => {
-    if ('Notification' in window && Notification.permission === 'default') {
+    if ("Notification" in window && Notification.permission === "default") {
       const enable = confirm(
-        '🔔 Enable browser notifications to get real-time updates about your orders!\n\nClick OK to enable notifications.'
+        "🔔 Enable browser notifications to get real-time updates about your orders!\n\nClick OK to enable notifications."
       );
       if (enable) {
         requestNotificationPermission();
       }
-    } else if ('Notification' in window && Notification.permission === 'denied') {
+    } else if (
+      "Notification" in window &&
+      Notification.permission === "denied"
+    ) {
       alert(
-        '🔔 Notifications are blocked!\n\n' +
-        'To enable notifications:\n' +
-        '1. Click the lock icon in your browser\'s address bar\n' +
-        '2. Find "Notifications" in the permissions\n' +
-        '3. Change it to "Allow"\n' +
-        '4. Refresh the page'
+        "🔔 Notifications are blocked!\n\n" +
+          "To enable notifications:\n" +
+          "1. Click the lock icon in your browser's address bar\n" +
+          '2. Find "Notifications" in the permissions\n' +
+          '3. Change it to "Allow"\n' +
+          "4. Refresh the page"
       );
     }
-    
+
     setShowNotifications(!showNotifications);
   };
 
@@ -113,11 +135,11 @@ export default function Navbar() {
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
 
-    if (diffMins < 1) return 'Just now';
+    if (diffMins < 1) return "Just now";
     if (diffMins < 60) return `${diffMins}m ago`;
     if (diffHours < 24) return `${diffHours}h ago`;
     if (diffDays < 7) return `${diffDays}d ago`;
-    return date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' });
+    return date.toLocaleDateString("en-IN", { month: "short", day: "numeric" });
   };
 
   return (
@@ -126,22 +148,29 @@ export default function Navbar() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center justify-between gap-4">
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+            <Link
+              href="/"
+              className="flex items-center gap-2 sm:gap-3 flex-shrink-0"
+            >
               <div className="text-xl sm:text-2xl">🍔</div>
               <div className="hidden sm:block">
-                <h1 className="font-serif text-lg sm:text-xl font-bold text-foreground">Campus Bites</h1>
+                <h1 className="font-serif text-lg sm:text-xl font-bold text-foreground">
+                  Campus Bites
+                </h1>
                 <p className="text-xs text-muted-foreground flex items-center gap-1">
                   <span className="w-2 h-2 rounded-full bg-success"></span>
                   Open until 9 PM
                 </p>
               </div>
               <div className="sm:hidden">
-                <h1 className="font-serif text-base font-bold text-foreground">Campus Bites</h1>
+                <h1 className="font-serif text-base font-bold text-foreground">
+                  Campus Bites
+                </h1>
               </div>
             </Link>
 
             {/* Search Bar - Desktop Only (Hide for vendors) */}
-            {user?.role !== 'VENDOR' && (
+            {user?.role !== "VENDOR" && (
               <div className="hidden md:flex flex-1 max-w-2xl">
                 <form onSubmit={handleSearch} className="relative w-full">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
@@ -161,7 +190,7 @@ export default function Navbar() {
               {user ? (
                 <>
                   {/* Vendor Dashboard Button - Desktop */}
-                  {user.role === 'VENDOR' && !isVendorPage && (
+                  {user.role === "VENDOR" && !isVendorPage && (
                     <Link
                       href="/vendor"
                       className="hidden md:flex items-center gap-2 px-4 py-2 bg-secondary text-secondary-foreground rounded-lg font-semibold hover:opacity-90 transition"
@@ -172,7 +201,7 @@ export default function Navbar() {
                   )}
 
                   {/* Mobile Menu Toggle */}
-                  <button 
+                  <button
                     onClick={() => {
                       setShowMobileMenu(!showMobileMenu);
                       setShowNotifications(false); // Close notifications when opening menu
@@ -180,27 +209,31 @@ export default function Navbar() {
                     className="md:hidden p-2 hover:bg-muted rounded-full transition-colors"
                     aria-label="Toggle menu"
                   >
-                    {showMobileMenu ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                    {showMobileMenu ? (
+                      <X className="w-6 h-6" />
+                    ) : (
+                      <Menu className="w-6 h-6" />
+                    )}
                   </button>
 
                   {/* Desktop Icons - Only for Customers */}
-                  {user.role !== 'VENDOR' && (
+                  {user.role !== "VENDOR" && (
                     <div className="hidden md:flex items-center gap-4">
                       {/* Notifications Dropdown */}
                       <div className="relative" ref={notificationRef}>
-                        <button 
+                        <button
                           onClick={handleNotificationClick}
                           className="relative p-2 hover:bg-muted rounded-full transition-colors"
                           title="Notifications"
                         >
-                          {notificationPermission === 'denied' ? (
+                          {notificationPermission === "denied" ? (
                             <BellOff className="w-6 h-6 text-muted-foreground" />
                           ) : (
                             <Bell className="w-6 h-6 text-foreground" />
                           )}
                           {unreadCount > 0 && (
                             <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1">
-                              {unreadCount > 99 ? '99+' : unreadCount}
+                              {unreadCount > 99 ? "99+" : unreadCount}
                             </span>
                           )}
                         </button>
@@ -211,8 +244,10 @@ export default function Navbar() {
                             {/* Header */}
                             <div className="p-4 border-b border-border flex items-center justify-between sticky top-0 bg-card z-10">
                               <div className="flex items-center gap-2">
-                                <h3 className="font-bold text-foreground">Notifications</h3>
-                                {notificationPermission === 'denied' && (
+                                <h3 className="font-bold text-foreground">
+                                  Notifications
+                                </h3>
+                                {notificationPermission === "denied" && (
                                   <button
                                     onClick={requestNotificationPermission}
                                     className="text-xs text-red-500 hover:underline"
@@ -231,34 +266,47 @@ export default function Navbar() {
                                 </button>
                               )}
                             </div>
-                            
+
                             {/* Notifications List */}
                             <div className="overflow-y-auto max-h-[28rem] divide-y divide-border">
                               {notifications.length === 0 ? (
                                 <div className="p-8 text-center">
                                   <Bell className="w-12 h-12 text-muted-foreground mx-auto mb-3 opacity-50" />
-                                  <p className="text-muted-foreground font-medium">No notifications yet</p>
+                                  <p className="text-muted-foreground font-medium">
+                                    No notifications yet
+                                  </p>
                                   <p className="text-sm text-muted-foreground mt-1">
-                                    You'll be notified when your order status changes
+                                    You'll be notified when your order status
+                                    changes
                                   </p>
                                 </div>
                               ) : (
                                 notifications.map((notification) => (
                                   <Link
                                     key={notification.id}
-                                    href={notification.orderId ? `/order-tracking?orderId=${notification.orderId}` : '#'}
+                                    href={
+                                      notification.orderId
+                                        ? `/order-tracking?orderId=${notification.orderId}`
+                                        : "#"
+                                    }
                                     onClick={() => {
                                       markAsRead(notification.id);
                                       setShowNotifications(false);
                                     }}
                                     className={`block p-4 hover:bg-muted transition-colors ${
-                                      !notification.read ? 'bg-secondary/5 border-l-4 border-l-secondary' : ''
+                                      !notification.read
+                                        ? "bg-secondary/5 border-l-4 border-l-secondary"
+                                        : ""
                                     }`}
                                   >
                                     <div className="flex items-start gap-3">
-                                      <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${
-                                        !notification.read ? 'bg-secondary' : 'bg-transparent'
-                                      }`} />
+                                      <div
+                                        className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${
+                                          !notification.read
+                                            ? "bg-secondary"
+                                            : "bg-transparent"
+                                        }`}
+                                      />
                                       <div className="flex-1 min-w-0">
                                         {notification.orderId && (
                                           <p className="font-semibold text-foreground text-sm mb-1">
@@ -269,7 +317,9 @@ export default function Navbar() {
                                           {notification.message}
                                         </p>
                                         <p className="text-xs text-muted-foreground">
-                                          {formatTimestamp(notification.timestamp)}
+                                          {formatTimestamp(
+                                            notification.timestamp
+                                          )}
                                         </p>
                                       </div>
                                     </div>
@@ -279,22 +329,23 @@ export default function Navbar() {
                             </div>
 
                             {/* Footer with permission status */}
-                            {notificationPermission !== 'granted' && (
+                            {notificationPermission !== "granted" && (
                               <div className="p-3 bg-muted/50 border-t border-border">
                                 <button
                                   onClick={requestNotificationPermission}
                                   className="w-full text-xs text-center text-secondary hover:underline font-semibold"
                                 >
-                                  🔔 Enable browser notifications for real-time updates
+                                  🔔 Enable browser notifications for real-time
+                                  updates
                                 </button>
                               </div>
                             )}
                           </div>
                         )}
                       </div>
-                      
-                      <Link 
-                        href="/profile" 
+
+                      <Link
+                        href="/profile"
                         className="p-2 hover:bg-muted rounded-full transition-colors"
                         title="Profile"
                       >
@@ -304,7 +355,7 @@ export default function Navbar() {
                   )}
 
                   {/* Cart - Only for Customers */}
-                  {user.role !== 'VENDOR' && (
+                  {user.role !== "VENDOR" && (
                     <button
                       onClick={() => setShowCart(true)}
                       className="relative p-2 hover:bg-muted rounded-full transition-colors"
@@ -320,9 +371,9 @@ export default function Navbar() {
                   )}
 
                   {/* Profile Icon for Vendors on Desktop */}
-                  {user.role === 'VENDOR' && (
-                    <Link 
-                      href="/profile" 
+                  {user.role === "VENDOR" && (
+                    <Link
+                      href="/profile"
                       className="hidden md:block p-2 hover:bg-muted rounded-full transition-colors"
                       title="Profile"
                     >
@@ -333,12 +384,12 @@ export default function Navbar() {
               ) : (
                 <>
                   <button
-                    onClick={() => router.push('/auth/login')}
+                    onClick={() => router.push("/auth/login")}
                     className="px-4 sm:px-6 py-2 bg-secondary text-secondary-foreground rounded-xl font-semibold hover:opacity-90 transition-opacity text-sm sm:text-base"
                   >
                     Sign In
                   </button>
-                  
+
                   <button
                     onClick={() => setShowCart(true)}
                     className="p-2 hover:bg-muted rounded-full transition-colors"
@@ -352,7 +403,7 @@ export default function Navbar() {
           </div>
 
           {/* Mobile Search Bar - Only for Customers */}
-          {user?.role !== 'VENDOR' && (
+          {user?.role !== "VENDOR" && (
             <div className="md:hidden mt-3">
               <form onSubmit={handleSearch} className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -373,16 +424,16 @@ export default function Navbar() {
       {showMobileMenu && (
         <div className="fixed inset-0 z-50 md:hidden">
           {/* Backdrop */}
-          <div 
+          <div
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => setShowMobileMenu(false)}
           />
-          
+
           {/* Menu Content */}
-          <div 
+          <div
             ref={mobileMenuRef}
             className="absolute top-0 right-0 h-full w-[80%] max-w-sm bg-card shadow-elegant-lg overflow-y-auto"
-            style={{ animation: 'slideInRight 0.3s ease-out' }}
+            style={{ animation: "slideInRight 0.3s ease-out" }}
           >
             <div className="flex flex-col h-full">
               {/* Header */}
@@ -399,10 +450,10 @@ export default function Navbar() {
               {/* Menu Items */}
               <div className="flex-1 overflow-y-auto p-4">
                 <div className="space-y-2">
-                  {user?.role === 'VENDOR' ? (
+                  {user?.role === "VENDOR" ? (
                     <>
                       {!isVendorPage && (
-                        <Link 
+                        <Link
                           href="/vendor"
                           onClick={() => setShowMobileMenu(false)}
                           className="flex items-center gap-3 p-3 hover:bg-muted rounded-lg transition-colors"
@@ -411,7 +462,7 @@ export default function Navbar() {
                           <span className="font-medium">Vendor Dashboard</span>
                         </Link>
                       )}
-                      <Link 
+                      <Link
                         href="/profile"
                         onClick={() => setShowMobileMenu(false)}
                         className="flex items-center gap-3 p-3 hover:bg-muted rounded-lg transition-colors"
@@ -422,7 +473,7 @@ export default function Navbar() {
                     </>
                   ) : (
                     <>
-                      <Link 
+                      <Link
                         href="/profile"
                         onClick={() => setShowMobileMenu(false)}
                         className="flex items-center gap-3 p-3 hover:bg-muted rounded-lg transition-colors"
@@ -437,7 +488,7 @@ export default function Navbar() {
                         }}
                         className="w-full flex items-center gap-3 p-3 hover:bg-muted rounded-lg transition-colors"
                       >
-                        {notificationPermission === 'denied' ? (
+                        {notificationPermission === "denied" ? (
                           <BellOff className="w-5 h-5" />
                         ) : (
                           <Bell className="w-5 h-5" />
@@ -445,7 +496,7 @@ export default function Navbar() {
                         <span className="font-medium">Notifications</span>
                         {unreadCount > 0 && (
                           <span className="ml-auto bg-destructive text-destructive-foreground text-xs font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-2">
-                            {unreadCount > 99 ? '99+' : unreadCount}
+                            {unreadCount > 99 ? "99+" : unreadCount}
                           </span>
                         )}
                       </button>
@@ -457,25 +508,19 @@ export default function Navbar() {
           </div>
         </div>
       )}
-      
+
       {showNotifications && (
         <div className="fixed inset-0 z-[60] md:hidden">
           {/* Backdrop */}
-          <div 
+          <div
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setShowNotifications(false);
-            }}
+            onClick={() => setShowNotifications(false)} // ✅ simpler & works on mobile
           />
-          
+
           {/* Notifications Panel */}
-          <div 
+          <div
             className="absolute top-0 right-0 h-full w-full max-w-sm bg-card shadow-elegant-lg overflow-hidden"
-            onClick={(e) => {
-              e.stopPropagation(); // Prevent backdrop click from propagating
-            }}
+            onClick={(e) => e.stopPropagation()} // ✅ only stopPropagation needed
           >
             {/* Header */}
             <div className="p-4 border-b border-border flex items-center justify-between sticky top-0 bg-card z-10">
@@ -483,7 +528,6 @@ export default function Navbar() {
                 <button
                   type="button"
                   onClick={(e) => {
-                    e.preventDefault();
                     e.stopPropagation();
                     setShowNotifications(false);
                   }}
@@ -497,7 +541,6 @@ export default function Navbar() {
                 <button
                   type="button"
                   onClick={(e) => {
-                    e.preventDefault();
                     e.stopPropagation();
                     markAllAsRead();
                   }}
@@ -507,13 +550,15 @@ export default function Navbar() {
                 </button>
               )}
             </div>
-            
+
             {/* Notifications List */}
             <div className="overflow-y-auto h-[calc(100%-5rem)] divide-y divide-border">
               {notifications.length === 0 ? (
                 <div className="p-8 text-center">
                   <Bell className="w-16 h-16 text-muted-foreground mx-auto mb-4 opacity-50" />
-                  <p className="text-muted-foreground font-medium mb-2">No notifications yet</p>
+                  <p className="text-muted-foreground font-medium mb-2">
+                    No notifications yet
+                  </p>
                   <p className="text-sm text-muted-foreground">
                     You'll be notified when your order status changes
                   </p>
@@ -523,25 +568,29 @@ export default function Navbar() {
                   <div
                     key={notification.id}
                     onClick={(e) => {
-                      e.preventDefault();
                       e.stopPropagation();
                       markAsRead(notification.id);
                       setShowNotifications(false);
-                      // Use setTimeout to ensure state updates before navigation
                       setTimeout(() => {
                         if (notification.orderId) {
-                          router.push(`/order-tracking?orderId=${notification.orderId}`);
+                          router.push(
+                            `/order-tracking?orderId=${notification.orderId}`
+                          );
                         }
                       }, 100);
                     }}
                     className={`w-full text-left block p-4 active:bg-muted transition-colors cursor-pointer touch-manipulation ${
-                      !notification.read ? 'bg-secondary/5 border-l-4 border-l-secondary' : ''
+                      !notification.read
+                        ? "bg-secondary/5 border-l-4 border-l-secondary"
+                        : ""
                     }`}
                   >
                     <div className="flex items-start gap-3 pointer-events-none">
-                      <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${
-                        !notification.read ? 'bg-secondary' : 'bg-transparent'
-                      }`} />
+                      <div
+                        className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${
+                          !notification.read ? "bg-secondary" : "bg-transparent"
+                        }`}
+                      />
                       <div className="flex-1 min-w-0">
                         {notification.orderId && (
                           <p className="font-semibold text-foreground text-sm mb-1">
@@ -562,12 +611,11 @@ export default function Navbar() {
             </div>
 
             {/* Footer */}
-            {notificationPermission !== 'granted' && (
+            {notificationPermission !== "granted" && (
               <div className="absolute bottom-0 left-0 right-0 p-3 bg-muted/50 border-t border-border">
                 <button
                   type="button"
                   onClick={(e) => {
-                    e.preventDefault();
                     e.stopPropagation();
                     requestNotificationPermission();
                   }}
