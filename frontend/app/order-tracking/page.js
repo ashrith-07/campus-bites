@@ -293,12 +293,12 @@ function OrderTrackingContent() {
           >
             Back to Home
           </Link>
-          <button
+          {/* <button
             onClick={fetchOrderDetails}
             className="flex-1 bg-card text-secondary py-3 sm:py-4 rounded-xl font-semibold border-2 border-secondary hover:bg-secondary/5 transition text-sm sm:text-base"
           >
             Refresh Status
-          </button>
+          </button> */}
         </div>
       </div>
     </div>
