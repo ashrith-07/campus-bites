@@ -159,7 +159,7 @@ function OrderTrackingContent() {
                 {statusSteps.map((status, index) => (
                   <div key={status.value} className="flex flex-col items-center flex-1">
                    
-                    <div className="relative z-10 flex flex-col items-center">
+                    <div className="relative z-1 flex flex-col items-center">
                       <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all duration-500 ${
                         status.step <= currentStep 
                           ? 'bg-secondary text-white shadow-lg scale-110' 
