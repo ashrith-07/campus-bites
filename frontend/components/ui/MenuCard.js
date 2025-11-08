@@ -122,7 +122,7 @@ export default function MenuCard({ item }) {
                 onClick={handleDecrement}
                 className="bg-secondary text-secondary-foreground w-7 h-7 sm:w-8 sm:h-8 rounded-md sm:rounded-lg hover:opacity-90 transition-all active:scale-95 flex items-center justify-center"
               >
-                <Minus className="w-3 h-3 sm:w-4 sm:h-4" />
+                <Minus className="w-3 h-3 sm:w-4 sm:h-4 flex items-center justify-center" />
               </button>
               <span className="font-bold text-sm sm:text-base min-w-[24px] sm:min-w-[28px] text-center">
                 {quantity}
@@ -131,7 +131,7 @@ export default function MenuCard({ item }) {
                 onClick={handleIncrement}
                 className="bg-secondary text-secondary-foreground w-7 h-7 sm:w-8 sm:h-8 rounded-md sm:rounded-lg hover:opacity-90 transition-all active:scale-95 flex items-center justify-center"
               >
-                <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
+                <Plus className="w-3 h-3 sm:w-4 sm:h-4 flex items-center justify-center" />
               </button>
             </div>
           ) : (
