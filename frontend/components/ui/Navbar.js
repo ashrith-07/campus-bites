@@ -457,23 +457,37 @@ export default function Navbar() {
           </div>
         </div>
       )}
-
+      
       {showNotifications && (
-        <div className="fixed inset-0 z-50 md:hidden">
+        <div className="fixed inset-0 z-[60] md:hidden">
           {/* Backdrop */}
           <div 
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-            onClick={() => setShowNotifications(false)}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setShowNotifications(false);
+            }}
           />
           
           {/* Notifications Panel */}
-          <div className="absolute top-0 right-0 h-full w-full max-w-sm bg-card shadow-elegant-lg overflow-hidden">
+          <div 
+            className="absolute top-0 right-0 h-full w-full max-w-sm bg-card shadow-elegant-lg overflow-hidden"
+            onClick={(e) => {
+              e.stopPropagation(); // Prevent backdrop click from propagating
+            }}
+          >
             {/* Header */}
             <div className="p-4 border-b border-border flex items-center justify-between sticky top-0 bg-card z-10">
               <div className="flex items-center gap-3">
                 <button
-                  onClick={() => setShowNotifications(false)}
-                  className="p-2 hover:bg-muted rounded-full transition-colors"
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setShowNotifications(false);
+                  }}
+                  className="p-2 hover:bg-muted rounded-full transition-colors active:opacity-70"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -481,12 +495,13 @@ export default function Navbar() {
               </div>
               {notifications.length > 0 && (
                 <button
+                  type="button"
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
                     markAllAsRead();
                   }}
-                  className="text-xs text-secondary hover:underline font-semibold active:opacity-70 touch-manipulation"
+                  className="text-xs text-secondary hover:underline font-semibold active:opacity-70 touch-manipulation px-2 py-1"
                 >
                   Mark all read
                 </button>
@@ -512,15 +527,18 @@ export default function Navbar() {
                       e.stopPropagation();
                       markAsRead(notification.id);
                       setShowNotifications(false);
-                      if (notification.orderId) {
-                        router.push(`/order-tracking?orderId=${notification.orderId}`);
-                      }
+                      // Use setTimeout to ensure state updates before navigation
+                      setTimeout(() => {
+                        if (notification.orderId) {
+                          router.push(`/order-tracking?orderId=${notification.orderId}`);
+                        }
+                      }, 100);
                     }}
                     className={`w-full text-left block p-4 active:bg-muted transition-colors cursor-pointer touch-manipulation ${
                       !notification.read ? 'bg-secondary/5 border-l-4 border-l-secondary' : ''
                     }`}
                   >
-                    <div className="flex items-start gap-3">
+                    <div className="flex items-start gap-3 pointer-events-none">
                       <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${
                         !notification.read ? 'bg-secondary' : 'bg-transparent'
                       }`} />
@@ -547,12 +565,13 @@ export default function Navbar() {
             {notificationPermission !== 'granted' && (
               <div className="absolute bottom-0 left-0 right-0 p-3 bg-muted/50 border-t border-border">
                 <button
+                  type="button"
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
                     requestNotificationPermission();
                   }}
-                  className="w-full text-xs text-center text-secondary hover:underline font-semibold touch-manipulation"
+                  className="w-full text-xs text-center text-secondary hover:underline font-semibold touch-manipulation py-2"
                 >
                   🔔 Enable browser notifications
                 </button>

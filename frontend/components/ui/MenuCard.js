@@ -12,12 +12,12 @@ export default function MenuCard({ item }) {
   const [imageError, setImageError] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
 
-
+  // Find if item exists in cart
   const cartItem = cart.find(cartItem => cartItem.id === item.id);
   const quantity = cartItem ? cartItem.quantity : 0;
 
   const handleAddToCart = () => {
-    
+    // Check if user is signed in
     if (!user) {
       alert('Please sign in to add items to cart');
       router.push('/auth/login');
@@ -46,7 +46,7 @@ export default function MenuCard({ item }) {
 
   return (
     <div className="bg-card rounded-xl sm:rounded-2xl overflow-hidden shadow-elegant border border-border hover:shadow-elegant-lg transition-all duration-300 hover:-translate-y-1">
-   
+      {/* Image or Emoji */}
       <div className="relative h-40 sm:h-48 overflow-hidden bg-gradient-to-br from-muted to-background flex items-center justify-center">
         {item.isEmoji ? (
           <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-background/80 flex items-center justify-center shadow-lg">
@@ -61,7 +61,7 @@ export default function MenuCard({ item }) {
                 <div className="animate-spin rounded-full h-8 w-8 border-4 border-secondary border-t-transparent"></div>
               </div>
             )}
-           
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img 
               src={item.imageUrl} 
               alt={item.name}
@@ -88,7 +88,7 @@ export default function MenuCard({ item }) {
         )}
       </div>
 
-     
+      {/* Content */}
       <div className="p-3 sm:p-4">
         <h3 className="font-serif text-base sm:text-lg font-bold text-foreground mb-1 sm:mb-2 line-clamp-1">
           {item.name}
@@ -109,27 +109,27 @@ export default function MenuCard({ item }) {
           </div>
         </div>
 
-        
+        {/* Price & Add Button */}
         <div className="flex items-center justify-between">
           <span className="font-bold text-lg sm:text-2xl text-secondary">
             ₹{parseFloat(item.price).toFixed(0)}
           </span>
           
-         
+          {/* Quantity Controls or Add Button */}
           {quantity > 0 ? (
-            <div className="flex items-center gap-2 bg-secondary/10 rounded-lg sm:rounded-xl p-1">
+            <div className="flex items-center gap-1.5 sm:gap-2 bg-secondary/10 rounded-lg sm:rounded-xl p-0.5 sm:p-1">
               <button
                 onClick={handleDecrement}
-                className="bg-secondary text-secondary-foreground p-1.5 sm:p-2 rounded-md sm:rounded-lg hover:opacity-90 transition-all active:scale-95"
+                className="bg-secondary text-secondary-foreground w-7 h-7 sm:w-8 sm:h-8 rounded-md sm:rounded-lg hover:opacity-90 transition-all active:scale-95 flex items-center justify-center"
               >
                 <Minus className="w-3 h-3 sm:w-4 sm:h-4" />
               </button>
-              <span className="font-bold text-sm sm:text-base min-w-[20px] sm:min-w-[24px] text-center">
+              <span className="font-bold text-sm sm:text-base min-w-[24px] sm:min-w-[28px] text-center">
                 {quantity}
               </span>
               <button
                 onClick={handleIncrement}
-                className="bg-secondary text-secondary-foreground p-1.5 sm:p-2 rounded-md sm:rounded-lg hover:opacity-90 transition-all active:scale-95"
+                className="bg-secondary text-secondary-foreground w-7 h-7 sm:w-8 sm:h-8 rounded-md sm:rounded-lg hover:opacity-90 transition-all active:scale-95 flex items-center justify-center"
               >
                 <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
               </button>
