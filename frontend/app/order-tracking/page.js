@@ -137,10 +137,10 @@ function OrderTrackingContent() {
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         
-        {/* <div className="bg-secondary/10 border border-secondary/20 rounded-xl p-3 sm:p-4 mb-6 flex items-center gap-2 sm:gap-3">
+        <div className="bg-secondary/10 border border-secondary/20 rounded-xl p-3 sm:p-4 mb-6 flex items-center gap-2 sm:gap-3">
           <div className="w-2 h-2 bg-secondary rounded-full animate-pulse flex-shrink-0"></div>
           <p className="text-xs sm:text-sm text-foreground">Live tracking enabled - status updates automatically</p>
-        </div> */}
+        </div>
 
        
         <div className="bg-card rounded-2xl p-6 sm:p-8 shadow-elegant mb-6 border border-border">
