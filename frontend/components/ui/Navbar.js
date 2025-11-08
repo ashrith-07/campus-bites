@@ -458,7 +458,6 @@ export default function Navbar() {
         </div>
       )}
 
-      {/* ⭐ NEW: Mobile Notifications Panel */}
       {showNotifications && (
         <div className="fixed inset-0 z-50 md:hidden">
           {/* Backdrop */}
@@ -483,10 +482,11 @@ export default function Navbar() {
               {notifications.length > 0 && (
                 <button
                   onClick={(e) => {
+                    e.preventDefault();
                     e.stopPropagation();
                     markAllAsRead();
                   }}
-                  className="text-xs text-secondary hover:underline font-semibold active:opacity-70"
+                  className="text-xs text-secondary hover:underline font-semibold active:opacity-70 touch-manipulation"
                 >
                   Mark all read
                 </button>
@@ -505,16 +505,18 @@ export default function Navbar() {
                 </div>
               ) : (
                 notifications.map((notification) => (
-                  <button
+                  <div
                     key={notification.id}
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
                       markAsRead(notification.id);
                       setShowNotifications(false);
                       if (notification.orderId) {
                         router.push(`/order-tracking?orderId=${notification.orderId}`);
                       }
                     }}
-                    className={`w-full text-left block p-4 hover:bg-muted transition-colors ${
+                    className={`w-full text-left block p-4 active:bg-muted transition-colors cursor-pointer touch-manipulation ${
                       !notification.read ? 'bg-secondary/5 border-l-4 border-l-secondary' : ''
                     }`}
                   >
@@ -536,7 +538,7 @@ export default function Navbar() {
                         </p>
                       </div>
                     </div>
-                  </button>
+                  </div>
                 ))
               )}
             </div>
@@ -545,8 +547,12 @@ export default function Navbar() {
             {notificationPermission !== 'granted' && (
               <div className="absolute bottom-0 left-0 right-0 p-3 bg-muted/50 border-t border-border">
                 <button
-                  onClick={requestNotificationPermission}
-                  className="w-full text-xs text-center text-secondary hover:underline font-semibold"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    requestNotificationPermission();
+                  }}
+                  className="w-full text-xs text-center text-secondary hover:underline font-semibold touch-manipulation"
                 >
                   🔔 Enable browser notifications
                 </button>

@@ -18,8 +18,8 @@ export default function ConditionalLayout({ children }) {
     '/order-tracking',
     '/checkout',
     '/order-success',
-    '/vendor',  // ✅ Hide main navbar on vendor dashboard
-    '/profile'  // ✅ Hide main navbar on profile page
+    '/vendor',  // Hide main navbar on vendor dashboard
+    '/profile'  // Hide main navbar on profile page
   ];
 
   // Check if current page should hide navbar

@@ -28,7 +28,6 @@ const getProfile = async (req, res) => {
 
 const updateProfile = async (req, res) => {
   const userId = req.user.userId;
-  // NOTE: Day 23 (Zod) will handle input validation
   const { name } = req.body; 
   
   if (!name) {
@@ -40,7 +39,6 @@ const updateProfile = async (req, res) => {
       where: { id: userId },
       data: {
         name: name,
-        // You could add updateable fields here later (e.g., address)
       },
       select: {
         id: true,

@@ -1,7 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-// Create checkout (mock payment initialization)
 const createCheckout = async (req, res) => {
   try {
     const { totalAmount, items } = req.body;
@@ -33,7 +32,7 @@ const createCheckout = async (req, res) => {
   }
 };
 
-// Confirm order (mock payment verification)
+
 const confirmOrder = async (req, res) => {
   try {
     const { totalAmount, items, paymentId, orderId } = req.body;
@@ -104,7 +103,6 @@ const confirmOrder = async (req, res) => {
   }
 };
 
-// Get all orders
 const getAllOrders = async (req, res) => {
   try {
     if (!req.user || !req.user.id) {
@@ -141,7 +139,6 @@ const getAllOrders = async (req, res) => {
   }
 };
 
-// Get order by ID
 const getOrderById = async (req, res) => {
   try {
     if (!req.user || !req.user.id) {
@@ -182,7 +179,6 @@ const getOrderById = async (req, res) => {
   }
 };
 
-// Update order status
 const updateOrderStatus = async (req, res) => {
   try {
     if (!req.user || !req.user.id) {
@@ -259,7 +255,7 @@ const updateOrderStatus = async (req, res) => {
   }
 };
 
-// Delete order
+
 const deleteOrder = async (req, res) => {
   try {
     if (!req.user || !req.user.id) {

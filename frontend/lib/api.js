@@ -1,3 +1,4 @@
+'use client';
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://campus-bites-server.vercel.app/api';
 
 const getToken = () => {
@@ -42,10 +43,10 @@ async function apiFetch(endpoint, options = {}) {
 }
 
 export const api = {
-  signup: (name, email, password) => 
+  signup: (name, email, password, phone) => 
     apiFetch('/auth/signup', {
       method: 'POST',
-      body: JSON.stringify({ name, email, password }),
+      body: JSON.stringify({ name, email, password, phone }),
     }),
 
   login: (email, password) =>

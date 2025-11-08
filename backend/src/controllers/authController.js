@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 
 const prisma = new PrismaClient();
 
-// Sign Up
+
 const signup = async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -29,10 +29,9 @@ const signup = async (req, res) => {
       }
     });
 
-    // ⭐ CRITICAL: Use 'id' not 'userId' for Socket.IO compatibility
     const token = jwt.sign(
       { 
-        id: user.id,        // ⭐ Must be 'id'
+        id: user.id,       
         email: user.email,
         role: user.role,
         name: user.name
@@ -58,7 +57,7 @@ const signup = async (req, res) => {
   }
 };
 
-// Login
+
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -77,10 +76,10 @@ const login = async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    // ⭐ CRITICAL: Use 'id' not 'userId' for Socket.IO compatibility
+  
     const token = jwt.sign(
       { 
-        id: user.id,        // ⭐ Must be 'id'
+        id: user.id,       
         email: user.email,
         role: user.role,
         name: user.name

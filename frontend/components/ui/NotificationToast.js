@@ -8,7 +8,7 @@ export default function NotificationToast() {
   const [toasts, setToasts] = useState([]);
   const [permission, setPermission] = useState('default');
 
-  // Check and request notification permission on mount
+ 
   useEffect(() => {
     if ('Notification' in window) {
       setPermission(Notification.permission);
@@ -16,7 +16,7 @@ export default function NotificationToast() {
     }
   }, []);
 
-  // Request browser notification permission
+
   const requestNotificationPermission = async () => {
     if ('Notification' in window && Notification.permission === 'default') {
       const permission = await Notification.requestPermission();
@@ -33,14 +33,14 @@ export default function NotificationToast() {
       const notification = event.detail;
       const toastId = Date.now();
       
-      // Add to toast list
+      
       setToasts(prev => {
         const newToasts = [...prev, { ...notification, toastId }];
         console.log('[Toast] 📋 Total toasts:', newToasts.length);
         return newToasts;
       });
 
-      // Show browser notification if permitted
+     
       if ('Notification' in window) {
         if (Notification.permission === 'granted') {
           showBrowserNotification(notification);
@@ -53,7 +53,7 @@ export default function NotificationToast() {
         }
       }
 
-      // Auto remove after 6 seconds
+     
       setTimeout(() => {
         setToasts(prev => prev.filter(t => t.toastId !== toastId));
       }, 6000);
@@ -68,7 +68,7 @@ export default function NotificationToast() {
     };
   }, []);
 
-  // Show native browser notification
+
   const showBrowserNotification = (notification) => {
     if ('Notification' in window && Notification.permission === 'granted') {
       console.log('[Toast] 🔔 Showing browser notification:', notification);
@@ -90,7 +90,7 @@ export default function NotificationToast() {
       try {
         const browserNotif = new Notification(title, options);
 
-        // Handle click on notification
+        
         browserNotif.onclick = () => {
           window.focus();
           if (notification.orderId) {
@@ -99,7 +99,7 @@ export default function NotificationToast() {
           browserNotif.close();
         };
 
-        // Auto close after 5 seconds
+        
         setTimeout(() => browserNotif.close(), 5000);
       } catch (error) {
         console.error('[Toast] ❌ Failed to show browser notification:', error);
@@ -113,12 +113,12 @@ export default function NotificationToast() {
   };
 
   const getIcon = (notification) => {
-    // Store status notifications
+   
     if (notification.type === 'store-status') {
       return <Store className="w-6 h-6 text-secondary" />;
     }
 
-    // Order status notifications
+
     switch (notification.status) {
       case 'COMPLETED':
         return <CheckCircle className="w-6 h-6 text-green-500" />;

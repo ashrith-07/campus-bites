@@ -14,7 +14,6 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// ⭐ CORS configuration
 const allowedOrigins = [
   'https://campus-bites-web.vercel.app',
   'https://campus-bites-server.vercel.app',
@@ -40,16 +39,15 @@ app.use(cors({
 
 app.use(express.json()); 
 
-// ⭐ Import Pusher helpers (no Socket.IO needed)
+
 const { sendOrderUpdate, broadcastStoreStatus } = require('./src/utils/pusher');
 
-// ⭐ Attach Pusher helpers to global for use in controllers
+
 global.sendOrderUpdate = sendOrderUpdate;
 global.broadcastStoreStatus = broadcastStoreStatus;
 
 console.log('[Pusher] ✅ Real-time updates configured with Pusher');
 
-// API Routes
 app.use('/api/auth', authRouter);
 app.use('/api/menu', menuRouter);
 app.use('/api/orders', orderRouter);
@@ -57,7 +55,6 @@ app.use('/api/users', userRouter);
 app.use('/api/upload', uploadRouter);
 app.use('/api/store', storeRouter);
 
-// Status endpoint
 app.get('/api/status', (req, res) => {
   res.json({ 
     message: 'Campus Bites API is running smoothly!', 
@@ -67,7 +64,7 @@ app.get('/api/status', (req, res) => {
   });
 });
 
-// ⭐ Health check for Vercel
+
 app.get('/', (req, res) => {
   res.json({ 
     status: 'ok',

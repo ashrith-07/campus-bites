@@ -14,7 +14,7 @@ export default function LoginPage() {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -24,7 +24,6 @@ export default function LoginPage() {
     const result = await login(formData.email, formData.password);
 
     if (result.success) {
-      // Redirect based on role
       if (result.user.role === 'VENDOR') {
         router.push('/vendor');
       } else {

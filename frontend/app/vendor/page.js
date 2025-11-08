@@ -74,11 +74,11 @@ export default function VendorDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Clean Vendor Header */}
+      
       <header className="bg-card border-b border-border sticky top-0 z-40 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center justify-between gap-3 sm:gap-4">
-            {/* Left: Back + Title */}
+         
             <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
               <Link
                 href="/"
@@ -97,9 +97,9 @@ export default function VendorDashboard() {
               </div>
             </div>
 
-            {/* Right: Desktop Actions */}
+           
             <div className="hidden md:flex items-center gap-3">
-              {/* Store Toggle - Better Design */}
+              
               <div className="flex items-center gap-2 px-3 py-2 bg-muted rounded-lg">
                 <span className="text-sm font-semibold whitespace-nowrap">Store:</span>
                 <button
@@ -133,7 +133,7 @@ export default function VendorDashboard() {
               </button>
             </div>
 
-            {/* Mobile Menu Button */}
+          
             <button
               onClick={() => setShowMobileMenu(!showMobileMenu)}
               className="md:hidden p-2 hover:bg-muted rounded-full transition-colors flex-shrink-0"
@@ -142,7 +142,7 @@ export default function VendorDashboard() {
             </button>
           </div>
 
-          {/* Mobile Store Status */}
+          
           <div className="md:hidden mt-3 flex items-center justify-between p-3 bg-muted rounded-lg">
             <span className="text-sm font-semibold">Store Status:</span>
             <div className="flex items-center gap-2">
@@ -164,7 +164,7 @@ export default function VendorDashboard() {
         </div>
       </header>
 
-      {/* Mobile Menu Overlay */}
+      
       {showMobileMenu && (
         <div className="fixed inset-0 z-50 md:hidden">
           <div className="absolute inset-0 bg-black/50" onClick={() => setShowMobileMenu(false)} />
@@ -186,7 +186,7 @@ export default function VendorDashboard() {
         </div>
       )}
 
-      {/* Tabs */}
+    
       <div className="border-b border-border bg-card sticky top-[65px] sm:top-[73px] z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="flex gap-1 overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
@@ -227,7 +227,7 @@ export default function VendorDashboard() {
         </div>
       </div>
 
-      {/* Tab Content */}
+      
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
         {activeTab === 'orders' && <OrdersManagement token={token} />}
         {activeTab === 'menu' && <MenuManagement token={token} />}
@@ -308,9 +308,9 @@ function OrdersManagement({ token }) {
           <div className="space-y-4">
             {orders.map((order) => (
               <div key={order.id} className="border border-border rounded-xl overflow-hidden bg-muted/20">
-                {/* ⭐ Order Header - Mobile Optimized */}
+               
                 <div className="p-4">
-                  {/* Top Row */}
+                 
                   <div className="flex items-center justify-between mb-3">
                     <div>
                       <p className="text-xs text-muted-foreground">Order ID</p>
@@ -327,7 +327,7 @@ function OrdersManagement({ token }) {
                     </span>
                   </div>
 
-                  {/* Customer & Date Row */}
+                 
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex-1 min-w-0">
                       <p className="text-xs text-muted-foreground">Customer</p>
@@ -346,7 +346,7 @@ function OrdersManagement({ token }) {
                     </div>
                   </div>
 
-                  {/* Items & Total Row */}
+                
                   <div className="flex items-center justify-between mb-3">
                     <button
                       onClick={() => toggleOrderDetails(order.id)}
@@ -370,7 +370,7 @@ function OrdersManagement({ token }) {
                     </div>
                   </div>
 
-                  {/* Status Update Dropdown */}
+              
                   <div>
                     <p className="text-xs text-muted-foreground mb-1">Update Status</p>
                     <select
@@ -387,7 +387,7 @@ function OrdersManagement({ token }) {
                   </div>
                 </div>
 
-                {/* ⭐ Expandable Order Items - Improved Mobile */}
+               
                 {expandedOrder === order.id && (
                   <div className="border-t border-border bg-card">
                     <div className="p-4">
@@ -399,7 +399,7 @@ function OrdersManagement({ token }) {
                               key={index}
                               className="bg-muted/50 rounded-lg p-3 border border-border"
                             >
-                              {/* Mobile: Stack vertically */}
+                             
                               <div className="flex items-start gap-3 mb-2">
                                 {item.menuItem?.imageUrl && (
                                   <img
@@ -418,7 +418,7 @@ function OrdersManagement({ token }) {
                                 </div>
                               </div>
                               
-                              {/* Details Row */}
+                              
                               <div className="flex items-center justify-between text-xs">
                                 <div className="flex items-center gap-4">
                                   <div>
@@ -443,7 +443,7 @@ function OrdersManagement({ token }) {
                         )}
                       </div>
                       
-                      {/* Order Summary */}
+                      
                       <div className="mt-4 pt-4 border-t border-border">
                         <div className="flex justify-between items-center">
                           <p className="font-semibold text-foreground">Order Total:</p>
@@ -502,13 +502,13 @@ function MenuManagement({ token }) {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Validate file type
+    
       if (!file.type.startsWith('image/')) {
         alert('Please select an image file');
         return;
       }
 
-      // Validate file size (max 5MB)
+      
       if (file.size > 5 * 1024 * 1024) {
         alert('Image size should be less than 5MB');
         return;
@@ -516,7 +516,7 @@ function MenuManagement({ token }) {
 
       setImageFile(file);
       
-      // Create preview
+      
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result);
@@ -568,7 +568,7 @@ function MenuManagement({ token }) {
     try {
       setUploading(true);
 
-      // Upload image if a new file is selected
+      
       let imageUrl = formData.imageUrl;
       if (imageFile) {
         const uploadedUrl = await uploadImage();
@@ -593,7 +593,7 @@ function MenuManagement({ token }) {
         stock: 100
       };
 
-      // Only include imageUrl if it exists
+   
       if (imageUrl) {
         payload.imageUrl = imageUrl;
       }
@@ -637,7 +637,7 @@ function MenuManagement({ token }) {
       popular: item.popular
     });
     
-    // Set preview to existing image
+   
     if (item.imageUrl) {
       setImagePreview(item.imageUrl);
     }
@@ -754,7 +754,7 @@ function MenuManagement({ token }) {
         </div>
       </div>
 
-      {/* Add/Edit Modal */}
+      
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-card rounded-2xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto border border-border">
@@ -812,7 +812,7 @@ function MenuManagement({ token }) {
                 </select>
               </div>
 
-              {/* Image Upload Section */}
+           
               <div>
                 <label className="block text-sm font-semibold mb-2">
                   Item Image <span className="text-muted-foreground font-normal">(Optional)</span>

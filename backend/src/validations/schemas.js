@@ -1,6 +1,5 @@
 const { z } = require('zod');
 
-// Auth validation schemas
 const signupSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters').max(100),
   email: z.string().email('Invalid email address'),
@@ -12,7 +11,6 @@ const loginSchema = z.object({
   password: z.string().min(1, 'Password is required'),
 });
 
-// Menu item validation schema
 const menuItemSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters').max(100),
   description: z.string().optional(),
@@ -24,7 +22,6 @@ const menuItemSchema = z.object({
   popular: z.boolean().default(false),
 });
 
-// Order validation schemas
 const checkoutSchema = z.object({
   totalAmount: z.number().positive('Total amount must be positive'),
   items: z.array(z.object({

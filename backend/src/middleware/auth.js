@@ -12,9 +12,8 @@ const authenticateToken = (req, res, next) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
-    // ⭐ CRITICAL: Ensure we use 'id' from the token
     req.user = {
-      id: decoded.id || decoded.userId, // Try id first, fallback to userId
+      id: decoded.id || decoded.userId, 
       email: decoded.email,
       role: decoded.role,
       name: decoded.name

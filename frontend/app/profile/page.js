@@ -63,7 +63,7 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
+    
       <header className="bg-card border-b border-border shadow-sm">
         <div className="max-w-4xl mx-auto px-6 py-4">
           <h1 className="font-serif text-2xl font-bold text-foreground">My Profile</h1>
@@ -71,7 +71,7 @@ export default function ProfilePage() {
       </header>
 
       <div className="max-w-4xl mx-auto px-6 py-8">
-        {/* Profile Card */}
+     
         <div className="bg-card rounded-2xl p-6 shadow-elegant mb-6 border border-border">
           <div className="flex items-center gap-4 mb-6">
             <div className="w-20 h-20 bg-gradient-to-br from-secondary to-secondary/80 rounded-full flex items-center justify-center">
@@ -89,7 +89,7 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* Quick Stats */}
+         
           <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border">
             <div className="text-center">
               <p className="text-3xl font-bold text-secondary">{orders.length}</p>
@@ -104,7 +104,7 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Recent Orders */}
+      
         <div className="bg-card rounded-2xl p-6 shadow-elegant mb-6 border border-border">
           <h2 className="font-serif text-xl font-bold mb-4 flex items-center gap-2">
             <ShoppingBag className="w-6 h-6" />
@@ -160,7 +160,7 @@ export default function ProfilePage() {
           )}
         </div>
 
-        {/* Action Buttons */}
+      
         <div className="space-y-3">
           <Link
             href="/"
@@ -179,7 +179,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Logout Confirmation Modal */}
+     
       {showLogoutConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4">
           <div className="bg-card rounded-2xl p-6 max-w-sm w-full border border-border shadow-elegant-lg">

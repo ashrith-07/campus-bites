@@ -1,14 +1,13 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-// Get store status
+
 const getStoreStatus = async (req, res) => {
   try {
     let storeSetting = await prisma.storeSetting.findUnique({
       where: { key: 'store_open' }
     });
 
-    // If setting doesn't exist, create it (default: open)
     if (!storeSetting) {
       storeSetting = await prisma.storeSetting.create({
         data: {
@@ -31,7 +30,6 @@ const getStoreStatus = async (req, res) => {
   }
 };
 
-// Update store status (vendor only)
 const updateStoreStatus = async (req, res) => {
   try {
     const { isOpen } = req.body;
@@ -40,7 +38,6 @@ const updateStoreStatus = async (req, res) => {
       return res.status(400).json({ error: 'isOpen must be a boolean' });
     }
 
-    // Update or create store setting
     const storeSetting = await prisma.storeSetting.upsert({
       where: { key: 'store_open' },
       update: { value: isOpen.toString() },
@@ -52,7 +49,7 @@ const updateStoreStatus = async (req, res) => {
 
     console.log(`[Store] Status updated to ${isOpen} by vendor ${req.user.id}`);
 
-    // ⭐ Broadcast store status via Pusher
+    //  Broadcast store status via Pusher
     if (global.broadcastStoreStatus) {
       await global.broadcastStoreStatus({
         isOpen,

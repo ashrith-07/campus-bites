@@ -22,7 +22,7 @@ export default function StoreClosed() {
             Sorry, we're not accepting orders right now. Please check back during our operating hours.
           </p>
 
-          {/* Real-time status indicator */}
+          
           <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
             <div className="flex items-center justify-center gap-2 text-destructive font-semibold text-sm sm:text-base">
               <span className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-destructive animate-pulse"></span>

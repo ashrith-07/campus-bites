@@ -7,7 +7,7 @@ import { ArrowLeft, Package, Clock, CheckCircle, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import { usePusher as useSocket } from '@/contexts/PusherContext';
 
-// Content component
+
 function OrderTrackingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -136,13 +136,13 @@ function OrderTrackingContent() {
       </header>
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        {/* Real-time Status Indicator */}
+        
         {/* <div className="bg-secondary/10 border border-secondary/20 rounded-xl p-3 sm:p-4 mb-6 flex items-center gap-2 sm:gap-3">
           <div className="w-2 h-2 bg-secondary rounded-full animate-pulse flex-shrink-0"></div>
           <p className="text-xs sm:text-sm text-foreground">Live tracking enabled - status updates automatically</p>
         </div> */}
 
-        {/* Status Card */}
+       
         <div className="bg-card rounded-2xl p-6 sm:p-8 shadow-elegant mb-6 border border-border">
           <div className="text-center mb-6 sm:mb-8">
             <p className="text-sm text-muted-foreground mb-2">Current Status</p>
@@ -151,14 +151,14 @@ function OrderTrackingContent() {
             </p>
           </div>
 
-          {/* Progress Bar */}
+          
           {!isCancelled && (
             <div className="relative">
-              {/* Progress Steps */}
+              
               <div className="relative flex items-center justify-between mb-8">
                 {statusSteps.map((status, index) => (
                   <div key={status.value} className="flex flex-col items-center flex-1">
-                    {/* Step Circle */}
+                   
                     <div className="relative z-10 flex flex-col items-center">
                       <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all duration-500 ${
                         status.step <= currentStep 
@@ -171,7 +171,7 @@ function OrderTrackingContent() {
                           <Clock className="w-6 h-6 sm:w-7 sm:h-7" />
                         )}
                       </div>
-                      {/* Step Label */}
+                    
                       <p className={`mt-2 text-xs sm:text-sm font-medium text-center whitespace-nowrap transition-colors ${
                         status.step <= currentStep 
                           ? 'text-secondary' 
@@ -181,7 +181,7 @@ function OrderTrackingContent() {
                       </p>
                     </div>
                     
-                    {/* Connector Line */}
+              
                     {index < statusSteps.length - 1 && (
                       <div className="absolute top-6 sm:top-7 left-0 right-0 h-1 flex items-center" style={{
                         left: `${(index + 1) * 25}%`,
@@ -207,7 +207,7 @@ function OrderTrackingContent() {
           )}
         </div>
 
-        {/* Order Details */}
+       
         <div className="bg-card rounded-2xl p-4 sm:p-6 shadow-elegant mb-6 border border-border">
           <h2 className="font-serif text-lg sm:text-xl font-bold mb-4 text-foreground">Order Details</h2>
           
@@ -276,7 +276,7 @@ function OrderTrackingContent() {
           </div>
         </div>
 
-        {/* Pickup Information */}
+        
         {order.status === 'READY' && (
           <div className="bg-green-500/10 border-2 border-green-500 rounded-2xl p-6 text-center mb-6 animate-pulse">
             <CheckCircle className="w-14 h-14 sm:w-16 sm:h-16 text-green-500 mx-auto mb-4" />
@@ -305,7 +305,7 @@ function OrderTrackingContent() {
   );
 }
 
-// Main component with Suspense
+
 export default function OrderTrackingPage() {
   return (
     <Suspense fallback={
