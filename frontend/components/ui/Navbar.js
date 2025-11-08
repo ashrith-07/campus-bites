@@ -514,13 +514,17 @@ export default function Navbar() {
           {/* Backdrop */}
           <div
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-            onClick={() => setShowNotifications(false)} // ✅ simpler & works on mobile
+            onClick={() => setShowNotifications(false)}
           />
 
           {/* Notifications Panel */}
           <div
             className="absolute top-0 right-0 h-full w-full max-w-sm bg-card shadow-elegant-lg overflow-hidden"
-            onClick={(e) => e.stopPropagation()} // ✅ only stopPropagation needed
+            style={{
+              WebkitOverflowScrolling: "touch", // ✅ enables smooth touch scroll
+              pointerEvents: "auto", // ✅ ensures touches work through blur layers
+            }}
+            onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
             <div className="p-4 border-b border-border flex items-center justify-between sticky top-0 bg-card z-10">
@@ -552,7 +556,13 @@ export default function Navbar() {
             </div>
 
             {/* Notifications List */}
-            <div className="overflow-y-auto h-[calc(100%-5rem)] divide-y divide-border">
+            <div
+              className="overflow-y-auto h-[calc(100%-5rem)] divide-y divide-border"
+              style={{
+                WebkitOverflowScrolling: "touch", // ✅ allows native scroll physics
+                pointerEvents: "auto", // ✅ ensures scrollable area captures taps
+              }}
+            >
               {notifications.length === 0 ? (
                 <div className="p-8 text-center">
                   <Bell className="w-16 h-16 text-muted-foreground mx-auto mb-4 opacity-50" />
