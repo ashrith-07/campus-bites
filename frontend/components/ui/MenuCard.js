@@ -19,7 +19,6 @@ export default function MenuCard({ item }) {
   const handleAddToCart = () => {
     // Check if user is signed in
     if (!user) {
-      alert('Please sign in to add items to cart');
       router.push('/auth/login');
       return;
     }
