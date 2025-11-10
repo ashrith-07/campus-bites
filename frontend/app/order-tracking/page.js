@@ -26,13 +26,13 @@ function OrderTrackingContent() {
     fetchOrderDetails();
   }, [orderId]);
 
-  // Listen for real-time updates
+  
   useEffect(() => {
     if (!orderId || !order) return;
 
     const update = getOrderUpdate(parseInt(orderId));
     if (update && update.status !== order.status) {
-      // Update order status in real-time
+      
       setOrder(prev => ({
         ...prev,
         status: update.status
@@ -285,7 +285,7 @@ function OrderTrackingContent() {
           </div>
         )}
 
-        {/* Action Buttons */}
+        
         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
           <Link 
             href="/"

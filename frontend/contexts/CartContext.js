@@ -8,12 +8,12 @@ export function CartProvider({ children }) {
   const [showCart, setShowCart] = useState(false);
   const [isClient, setIsClient] = useState(false);
 
-  // Set isClient to true after component mounts
+ 
   useEffect(() => {
     setIsClient(true);
   }, []);
 
-  // Load cart from localStorage on mount
+  
   useEffect(() => {
     if (isClient) {
       const savedCart = localStorage.getItem('cart');
@@ -23,7 +23,7 @@ export function CartProvider({ children }) {
     }
   }, [isClient]);
 
-  // Save cart to localStorage whenever it changes
+  
   useEffect(() => {
     if (isClient && cart.length >= 0) {
       localStorage.setItem('cart', JSON.stringify(cart));
@@ -40,15 +40,15 @@ export function CartProvider({ children }) {
           : cartItem
       ));
     } else {
-      // ⭐ Include all item properties including imageUrl and isEmoji
+      
       setCart([...cart, { 
         id: item.id,
         name: item.name,
         price: item.price,
-        imageUrl: item.imageUrl,      // ⭐ Add this
-        isEmoji: item.isEmoji,         // ⭐ Add this
-        description: item.description, // Optional but helpful
-        category: item.category,       // Optional but helpful
+        imageUrl: item.imageUrl,      
+        isEmoji: item.isEmoji,         
+        description: item.description, 
+        category: item.category,       
         quantity: 1 
       }]);
     }

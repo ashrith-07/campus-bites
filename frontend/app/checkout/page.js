@@ -113,7 +113,7 @@ export default function CheckoutPage() {
 
   return (
     <div className="min-h-screen bg-background pb-6">
-      {/* Header */}
+     
       <header className="bg-card border-b sticky top-0 z-40 shadow-sm">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center gap-3 sm:gap-4">
@@ -133,7 +133,7 @@ export default function CheckoutPage() {
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
         <div className="grid lg:grid-cols-2 gap-4 sm:gap-6">
-          {/* Order Summary */}
+          
           <div className="space-y-4 sm:space-y-6">
             <div className="bg-card rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-elegant border border-border">
               <h2 className="font-serif text-lg sm:text-2xl font-bold text-foreground mb-4 sm:mb-6">
@@ -170,7 +170,7 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            {/* Pickup Details */}
+            
             <div className="bg-card rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-elegant border border-border">
               <h2 className="font-serif text-base sm:text-xl font-bold text-foreground mb-4 sm:mb-6">
                 Pickup Details
@@ -201,7 +201,7 @@ export default function CheckoutPage() {
             </div>
           </div>
 
-          {/* Payment Method */}
+          
           <div className="space-y-4 sm:space-y-6">
             <div className="bg-card rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-elegant border border-border">
               <h2 className="font-serif text-lg sm:text-2xl font-bold text-foreground mb-4 sm:mb-6">

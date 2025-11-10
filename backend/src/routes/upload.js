@@ -4,19 +4,19 @@ const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const { authenticateToken, checkVendorRole } = require('../middleware/auth');
 
-// Configure Cloudinary (or your preferred service)
+
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-// Configure Multer for memory storage
+
 const storage = multer.memoryStorage();
 const upload = multer({
   storage,
   limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB limit
+    fileSize: 5 * 1024 * 1024 
   },
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith('image/')) {
@@ -27,14 +27,14 @@ const upload = multer({
   }
 });
 
-// Upload image endpoint
+
 router.post('/image', authenticateToken, checkVendorRole, upload.single('image'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No image file provided' });
     }
 
-    // Upload to Cloudinary using buffer
+
     const result = await new Promise((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
         {

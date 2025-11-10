@@ -236,7 +236,7 @@ export default function VendorDashboard() {
     </div>
   );
 }
-// ========================= Orders Management =========================
+
 function OrdersManagement({ token }) {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -462,7 +462,7 @@ function OrdersManagement({ token }) {
   );
 }
 
-// ========================= Menu Management =========================
+
 function MenuManagement({ token }) {
   const [menuItems, setMenuItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -918,7 +918,7 @@ function MenuManagement({ token }) {
     </div>
   );
 }
-// ========================= Status Overview =========================
+
 function StatusOverview({ token }) {
   const [stats, setStats] = useState({
     pending: 0,

@@ -20,15 +20,15 @@ export default function CartSidebar() {
 
   return (
     <>
-      {/* Backdrop */}
+      
       <div
         className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
         onClick={() => setShowCart(false)}
       />
 
-      {/* Sidebar */}
+     
       <div className="fixed inset-y-0 right-0 w-full sm:w-96 bg-card shadow-elegant-lg z-50 flex flex-col animate-slide-in">
-        {/* Header */}
+       
         <div className="bg-gradient-to-r from-secondary to-secondary/90 text-secondary-foreground p-6 flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
@@ -45,7 +45,7 @@ export default function CartSidebar() {
           </button>
         </div>
 
-        {/* Cart Items */}
+        
         <div className="flex-1 overflow-y-auto p-6">
           {cart.length === 0 ? (
             <div className="text-center py-12">
@@ -58,7 +58,7 @@ export default function CartSidebar() {
               {cart.map((item) => (
                 <div key={item.id} className="bg-muted rounded-xl p-4 border border-border">
                   <div className="flex items-start gap-3 mb-3">
-                    {/* ⭐ Show image if available, otherwise show emoji */}
+                    
                     {item.imageUrl ? (
                       item.isEmoji ? (
                         <div className="text-4xl">{item.imageUrl}</div>
@@ -107,7 +107,7 @@ export default function CartSidebar() {
           )}
         </div>
 
-        {/* Footer */}
+       
         {cart.length > 0 && (
           <div className="border-t border-border p-6 bg-background">
             <div className="bg-card rounded-2xl p-4 mb-4 border border-border">

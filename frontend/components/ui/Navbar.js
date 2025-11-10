@@ -32,17 +32,17 @@ export default function Navbar() {
   const notificationRef = useRef(null);
   const mobileMenuRef = useRef(null);
 
-  // Check if we're on vendor page
+  
   const isVendorPage = pathname === "/vendor";
 
-  // Check notification permission on mount
+  
   useEffect(() => {
     if ("Notification" in window) {
       setNotificationPermission(Notification.permission);
     }
   }, []);
 
-  // Close dropdowns when clicking outside
+  
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
@@ -63,7 +63,7 @@ export default function Navbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Prevent body scroll when mobile menu is open
+  
   useEffect(() => {
     if (showMobileMenu || showNotifications) {
       document.body.style.overflow = "hidden";
@@ -75,7 +75,7 @@ export default function Navbar() {
     };
   }, [showMobileMenu, showNotifications]);
 
-  // Request notification permission
+  
   const requestNotificationPermission = async () => {
     if ("Notification" in window) {
       const permission = await Notification.requestPermission();
@@ -93,7 +93,7 @@ export default function Navbar() {
     }
   };
 
-  // Handle notification button click
+
   const handleNotificationClick = () => {
     if ("Notification" in window && Notification.permission === "default") {
       const enable = confirm(
@@ -126,7 +126,7 @@ export default function Navbar() {
     }
   };
 
-  // Format timestamp for better readability
+  
   const formatTimestamp = (timestamp) => {
     const date = new Date(timestamp);
     const now = new Date();
@@ -147,7 +147,7 @@ export default function Navbar() {
       <header className="bg-card border-b border-border sticky top-0 z-40 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center justify-between gap-4">
-            {/* Logo */}
+            
             <Link
               href="/"
               className="flex items-center gap-2 sm:gap-3 flex-shrink-0"
@@ -169,7 +169,7 @@ export default function Navbar() {
               </div>
             </Link>
 
-            {/* Search Bar - Desktop Only (Hide for vendors) */}
+            
             {user?.role !== "VENDOR" && (
               <div className="hidden md:flex flex-1 max-w-2xl">
                 <form onSubmit={handleSearch} className="relative w-full">
@@ -185,11 +185,11 @@ export default function Navbar() {
               </div>
             )}
 
-            {/* Right Side Icons */}
+           
             <div className="flex items-center gap-2 sm:gap-4">
               {user ? (
                 <>
-                  {/* Vendor Dashboard Button - Desktop */}
+                 
                   {user.role === "VENDOR" && !isVendorPage && (
                     <Link
                       href="/vendor"
@@ -200,11 +200,11 @@ export default function Navbar() {
                     </Link>
                   )}
 
-                  {/* Mobile Menu Toggle */}
+                
                   <button
                     onClick={() => {
                       setShowMobileMenu(!showMobileMenu);
-                      setShowNotifications(false); // Close notifications when opening menu
+                      setShowNotifications(false); 
                     }}
                     className="md:hidden p-2 hover:bg-muted rounded-full transition-colors"
                     aria-label="Toggle menu"
@@ -216,10 +216,10 @@ export default function Navbar() {
                     )}
                   </button>
 
-                  {/* Desktop Icons - Only for Customers */}
+                
                   {user.role !== "VENDOR" && (
                     <div className="hidden md:flex items-center gap-4">
-                      {/* Notifications Dropdown */}
+                     
                       <div className="relative" ref={notificationRef}>
                         <button
                           onClick={handleNotificationClick}
@@ -238,10 +238,10 @@ export default function Navbar() {
                           )}
                         </button>
 
-                        {/* Notifications Dropdown */}
+                       
                         {showNotifications && (
                           <div className="absolute right-0 mt-2 w-96 bg-card border border-border rounded-xl shadow-2xl max-h-[32rem] overflow-hidden z-50">
-                            {/* Header */}
+                          
                             <div className="p-4 border-b border-border flex items-center justify-between sticky top-0 bg-card z-10">
                               <div className="flex items-center gap-2">
                                 <h3 className="font-bold text-foreground">
@@ -267,7 +267,7 @@ export default function Navbar() {
                               )}
                             </div>
 
-                            {/* Notifications List */}
+                          
                             <div className="overflow-y-auto max-h-[28rem] divide-y divide-border">
                               {notifications.length === 0 ? (
                                 <div className="p-8 text-center">
@@ -328,7 +328,7 @@ export default function Navbar() {
                               )}
                             </div>
 
-                            {/* Footer with permission status */}
+                            
                             {notificationPermission !== "granted" && (
                               <div className="p-3 bg-muted/50 border-t border-border">
                                 <button
@@ -354,7 +354,7 @@ export default function Navbar() {
                     </div>
                   )}
 
-                  {/* Cart - Only for Customers */}
+                 
                   {user.role !== "VENDOR" && (
                     <button
                       onClick={() => setShowCart(true)}
@@ -370,7 +370,7 @@ export default function Navbar() {
                     </button>
                   )}
 
-                  {/* Profile Icon for Vendors on Desktop */}
+                  
                   {user.role === "VENDOR" && (
                     <Link
                       href="/profile"
@@ -402,7 +402,7 @@ export default function Navbar() {
             </div>
           </div>
 
-          {/* Mobile Search Bar - Only for Customers */}
+        
           {user?.role !== "VENDOR" && (
             <div className="md:hidden mt-3">
               <form onSubmit={handleSearch} className="relative">
@@ -420,23 +420,23 @@ export default function Navbar() {
         </div>
       </header>
 
-      {/* Mobile Menu - Full Screen Overlay */}
+      
       {showMobileMenu && (
         <div className="fixed inset-0 z-50 md:hidden">
-          {/* Backdrop */}
+          
           <div
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => setShowMobileMenu(false)}
           />
 
-          {/* Menu Content */}
+         
           <div
             ref={mobileMenuRef}
             className="absolute top-0 right-0 h-full w-[80%] max-w-sm bg-card shadow-elegant-lg overflow-y-auto"
             style={{ animation: "slideInRight 0.3s ease-out" }}
           >
             <div className="flex flex-col h-full">
-              {/* Header */}
+              
               <div className="p-4 border-b border-border flex items-center justify-between sticky top-0 bg-card z-10">
                 <h2 className="font-bold text-lg">Menu</h2>
                 <button
@@ -447,7 +447,7 @@ export default function Navbar() {
                 </button>
               </div>
 
-              {/* Menu Items */}
+              
               <div className="flex-1 overflow-y-auto p-4">
                 <div className="space-y-2">
                   {user?.role === "VENDOR" ? (
@@ -511,22 +511,22 @@ export default function Navbar() {
 
       {showNotifications && (
         <div className="fixed inset-0 z-[60] md:hidden">
-          {/* Backdrop */}
+          
           <div
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => setShowNotifications(false)}
           />
 
-          {/* Notifications Panel */}
+         
           <div
             className="absolute top-0 right-0 h-full w-full max-w-sm bg-card shadow-elegant-lg overflow-hidden"
             style={{
-              WebkitOverflowScrolling: "touch", // ✅ enables smooth touch scroll
-              pointerEvents: "auto", // ✅ ensures touches work through blur layers
+              WebkitOverflowScrolling: "touch", 
+              pointerEvents: "auto", 
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header */}
+           
             <div className="p-4 border-b border-border flex items-center justify-between sticky top-0 bg-card z-10">
               <div className="flex items-center gap-3">
                 <button
@@ -555,12 +555,12 @@ export default function Navbar() {
               )}
             </div>
 
-            {/* Notifications List */}
+         
             <div
               className="overflow-y-auto h-[calc(100%-5rem)] divide-y divide-border"
               style={{
-                WebkitOverflowScrolling: "touch", // ✅ allows native scroll physics
-                pointerEvents: "auto", // ✅ ensures scrollable area captures taps
+                WebkitOverflowScrolling: "touch", 
+                pointerEvents: "auto", 
               }}
             >
               {notifications.length === 0 ? (
@@ -620,7 +620,7 @@ export default function Navbar() {
               )}
             </div>
 
-            {/* Footer */}
+           
             {notificationPermission !== "granted" && (
               <div className="absolute bottom-0 left-0 right-0 p-3 bg-muted/50 border-t border-border">
                 <button

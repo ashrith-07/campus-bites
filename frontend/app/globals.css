@@ -4,53 +4,53 @@
 
 @layer base {
   :root {
-    /* Light cream background */
+   
     --background: 40 20% 97%;
     --foreground: 0 0% 10%;
     
-    /* Pure white cards */
+    
     --card: 0 0% 100%;
     --card-foreground: 0 0% 10%;
     
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 10%;
     
-    /* Dark text */
+    
     --primary: 0 0% 9%;
     --primary-foreground: 0 0% 98%;
     
-    /* Orange/amber accent color */
+    
     --secondary: 25 75% 55%;
     --secondary-foreground: 0 0% 100%;
     
-    /* Light beige/cream for muted areas */
+    
     --muted: 40 20% 94%;
     --muted-foreground: 0 0% 45%;
     
-    /* Accent similar to muted */
+    
     --accent: 40 20% 94%;
     --accent-foreground: 0 0% 9%;
     
-    /* Red for destructive actions */
+    
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
     
-    /* Green for success */
+    
     --success: 142 76% 36%;
     --success-foreground: 0 0% 98%;
     
-    /* Light borders */
+  
     --border: 40 20% 88%;
     --input: 40 20% 88%;
     
-    /* Orange ring/focus */
+ 
     --ring: 25 75% 55%;
     --radius: 1rem;
   }
 }
 
 @layer utilities {
-  /* Hide scrollbar but keep functionality */
+  
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
@@ -59,13 +59,13 @@
     display: none;
   }
 
-  /* Smooth transitions */
+ 
   .transition-smooth {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 }
 
-/* Animations */
+
 @keyframes slide-in {
   from {
     transform: translateX(100%);
@@ -109,39 +109,39 @@
   animation: scale-in 0.2s ease-out;
 }
 
-/* Mobile optimizations */
+
 @media (max-width: 768px) {
-  /* Prevent zoom on input focus */
+ 
   input, select, textarea {
     font-size: 16px !important;
   }
   
-  /* Better touch targets */
+
   button, a {
     min-height: 44px;
     min-width: 44px;
   }
 }
 
-/* Smooth scrolling */
+
 html {
   scroll-behavior: smooth;
 }
 
-/* Better focus styles */
+
 *:focus-visible {
   outline: 2px solid hsl(var(--ring));
   outline-offset: 2px;
 }
-/* Enhanced Mobile Responsiveness */
+
 @media (max-width: 640px) {
-  /* Reduce padding on mobile */
+ 
   .max-w-7xl {
     padding-left: 1rem;
     padding-right: 1rem;
   }
 
-  /* Smaller font sizes on mobile */
+  
   h1 {
     font-size: 1.5rem !important;
   }
@@ -150,46 +150,46 @@ html {
     font-size: 1.25rem !important;
   }
 
-  /* Better touch targets */
+  
   button, a, input {
     min-height: 44px;
   }
 
-  /* Stack elements vertically on mobile */
+
   .sm\:flex-row {
     flex-direction: column;
   }
 }
 
-/* Tablet adjustments */
+
 @media (min-width: 641px) and (max-width: 1024px) {
   .grid {
     gap: 1rem;
   }
 }
 
-/* Hide scrollbar for Chrome, Safari and Opera */
+
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
 
-/* Hide scrollbar for IE, Edge and Firefox */
+
 .scrollbar-hide {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none;  
+  scrollbar-width: none; 
 }
 
-/* Smooth scrolling */
+
 html {
   scroll-behavior: smooth;
 }
 
-/* Prevent horizontal overflow */
+
 body {
   overflow-x: hidden;
 }
 
-/* Animation for mobile menu */
+
 @keyframes slide-in {
   from {
     transform: translateX(100%);

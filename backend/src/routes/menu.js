@@ -12,11 +12,11 @@ const { menuItemSchema } = require('../validations/schemas');
 
 const router = express.Router();
 
-// Public routes
+
 router.get('/items', getAllMenuItems);
 router.get('/items/:id', getMenuItemById);
 
-// Vendor only routes
+
 router.post('/items', authenticateToken, checkVendorRole, validate(menuItemSchema), createMenuItem);
 router.put('/items/:id', authenticateToken, checkVendorRole, validate(menuItemSchema), updateMenuItem);
 router.delete('/items/:id', authenticateToken, checkVendorRole, deleteMenuItem);

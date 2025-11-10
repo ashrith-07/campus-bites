@@ -18,7 +18,7 @@ export function PusherProvider({ children }) {
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://campus-bites-server.vercel.app/api';
 
-  // ⭐ Polling fallback - checks store status every 10 seconds
+ 
   const pollStoreStatus = async () => {
     try {
       const response = await fetch(`${API_URL}/store/status`);
@@ -31,7 +31,7 @@ export function PusherProvider({ children }) {
     }
   };
 
-  // ⭐ Start polling
+  
   useEffect(() => {
     pollStoreStatus();
     pollingIntervalRef.current = setInterval(pollStoreStatus, 10000);
@@ -43,7 +43,7 @@ export function PusherProvider({ children }) {
     };
   }, []);
 
-  // ⭐ Pusher Connection
+  
   useEffect(() => {
     if (!token || !user) {
       console.log('[Pusher] ⚠️ No token or user, skipping connection');
@@ -54,12 +54,6 @@ export function PusherProvider({ children }) {
       return;
     }
 
-    console.log('[Pusher] 🔌 Initializing connection...');
-    console.log('[Pusher] 👤 User ID:', user.id);
-    console.log('[Pusher] 👤 Email:', user.email);
-    console.log('[Pusher] 👤 Role:', user.role);
-
-    // Initialize Pusher
     const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY, {
       cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER,
       encrypted: true
@@ -67,7 +61,7 @@ export function PusherProvider({ children }) {
 
     pusherRef.current = pusher;
 
-    // Connection state events
+  
     pusher.connection.bind('connected', () => {
       console.log('[Pusher] ✅ Connected successfully!');
       setIsConnected(true);
@@ -83,7 +77,7 @@ export function PusherProvider({ children }) {
       setIsConnected(false);
     });
 
-    // ⭐ Subscribe to user-specific channel for order updates
+  
     const userChannel = pusher.subscribe(`user-${user.id}`);
     
     userChannel.bind('pusher:subscription_succeeded', () => {
@@ -125,7 +119,7 @@ export function PusherProvider({ children }) {
       showToast(notification);
     });
 
-    // ⭐ Subscribe to store updates channel (broadcast)
+    
     const storeChannel = pusher.subscribe('store-updates');
     
     storeChannel.bind('pusher:subscription_succeeded', () => {
@@ -154,7 +148,7 @@ export function PusherProvider({ children }) {
       }
     });
 
-    // Cleanup
+  
     return () => {
       console.log('[Pusher] 🔌 Disconnecting...');
       if (pusher) {
@@ -196,7 +190,7 @@ export function PusherProvider({ children }) {
     setStoreStatus(newStatus);
   };
 
-  // ⭐ Debug function to test notifications
+  
   const testNotification = () => {
     const testNotif = {
       id: Date.now(),
@@ -244,5 +238,5 @@ export const usePusher = () => {
   return context;
 };
 
-// Keep backward compatibility
+
 export const useSocket = usePusher;

@@ -10,12 +10,6 @@ const getToken = () => {
 
 async function apiFetch(endpoint, options = {}) {
   const token = getToken();
-  
-  console.log('API Request:', {
-    endpoint,
-    method: options.method || 'GET',
-    hasToken: !!token
-  });
 
   const config = {
     ...options,
@@ -28,10 +22,6 @@ async function apiFetch(endpoint, options = {}) {
 
   const response = await fetch(`${API_URL}${endpoint}`, config);
 
-  console.log('API Response:', {
-    status: response.status,
-    ok: response.ok
-  });
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ error: 'Request failed' }));

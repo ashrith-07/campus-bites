@@ -10,11 +10,11 @@ const {
   deleteOrder
 } = require('../controllers/orderController');
 
-// Checkout routes
+
 router.post('/checkout', authenticateToken, createCheckout);
 router.post('/confirm', authenticateToken, confirmOrder);
 
-// Order CRUD
+
 router.get('/', authenticateToken, getAllOrders);
 router.get('/:id', authenticateToken, getOrderById);
 router.put('/:id', authenticateToken, checkVendorRole, updateOrderStatus);

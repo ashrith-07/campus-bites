@@ -8,7 +8,7 @@ const pusher = new Pusher({
   useTLS: true
 });
 
-// Helper function to send order updates to specific user
+
 const sendOrderUpdate = async (userId, data) => {
   try {
     await pusher.trigger(`user-${userId}`, 'order-update', data);
@@ -20,7 +20,7 @@ const sendOrderUpdate = async (userId, data) => {
   }
 };
 
-// Helper function to broadcast store status to all users
+
 const broadcastStoreStatus = async (data) => {
   try {
     await pusher.trigger('store-updates', 'store-status', data);

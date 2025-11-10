@@ -45,7 +45,6 @@ export default function NotificationToast() {
         if (Notification.permission === 'granted') {
           showBrowserNotification(notification);
         } else if (Notification.permission === 'default') {
-          // Auto-request permission for important notifications
           const perm = await requestNotificationPermission();
           if (perm === 'granted') {
             showBrowserNotification(notification);

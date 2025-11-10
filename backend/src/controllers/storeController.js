@@ -49,7 +49,7 @@ const updateStoreStatus = async (req, res) => {
 
     console.log(`[Store] Status updated to ${isOpen} by vendor ${req.user.id}`);
 
-    //  Broadcast store status via Pusher
+    
     if (global.broadcastStoreStatus) {
       await global.broadcastStoreStatus({
         isOpen,

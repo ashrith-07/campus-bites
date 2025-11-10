@@ -5,7 +5,6 @@ async function main() {
   console.log('🌱 Starting seed...');
 
   try {
-    // Delete existing data
     console.log('Deleting existing order items...');
     await prisma.orderItem.deleteMany();
     
@@ -17,7 +16,7 @@ async function main() {
     
     console.log('✅ Cleared existing data');
 
-    // Create menu items
+    
     console.log('Creating menu items...');
     const result = await prisma.menuItem.createMany({
       data: [
@@ -196,7 +195,7 @@ async function main() {
 
     console.log(`✅ Created ${result.count} menu items`);
     
-    // Verify the data
+    
     const allItems = await prisma.menuItem.findMany();
     console.log(`\n📊 Total items in database: ${allItems.length}`);
     console.log('\n📋 Menu Items:');

@@ -82,7 +82,7 @@ const confirmOrder = async (req, res) => {
       }
     });
 
-    // ⭐ Send real-time notification via Pusher
+    
     if (global.sendOrderUpdate) {
       await global.sendOrderUpdate(userId, {
         orderId: order.id,
@@ -237,7 +237,7 @@ const updateOrderStatus = async (req, res) => {
       'CANCELLED': `Your order #${orderId} has been cancelled`
     };
 
-    // ⭐ Send real-time notification via Pusher
+   
     if (global.sendOrderUpdate) {
       await global.sendOrderUpdate(existingOrder.userId, {
         orderId,
@@ -282,7 +282,7 @@ const deleteOrder = async (req, res) => {
     await prisma.orderItem.deleteMany({ where: { orderId } });
     await prisma.order.delete({ where: { id: orderId } });
 
-    // ⭐ Send cancellation notification via Pusher
+    
     if (req.user.role === 'VENDOR' && global.sendOrderUpdate) {
       await global.sendOrderUpdate(order.userId, {
         orderId,
