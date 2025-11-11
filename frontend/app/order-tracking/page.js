@@ -117,7 +117,7 @@ function OrderTrackingContent() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
+      
       <header className="bg-card border-b border-border sticky top-0 z-30 shadow-sm">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4">
           <div className="flex items-center gap-3 sm:gap-4">

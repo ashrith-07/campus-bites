@@ -53,12 +53,12 @@ export default function StoreClosed() {
             </div>
           </div>
 
-          <Link
+          {/* <Link
             href="/"
             className="inline-block text-sm sm:text-base text-secondary font-semibold hover:underline"
           >
             ← Back to Home
-          </Link>
+          </Link> */}
         </div>
       </div>
     </div>
