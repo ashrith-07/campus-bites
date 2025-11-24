@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { User, Mail, ShoppingBag, LogOut, ChevronRight } from 'lucide-react';
+import { User, Mail, ShoppingBag, LogOut, ChevronRight, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
 export default function ProfilePage() {
