@@ -63,7 +63,6 @@ export function PusherProvider({ children }) {
 
   
     pusher.connection.bind('connected', () => {
-      console.log('[Pusher] ✅ Connected successfully!');
       setIsConnected(true);
     });
 
@@ -98,13 +97,11 @@ export function PusherProvider({ children }) {
       };
 
       setNotifications(prev => {
-        console.log('[Pusher] 📋 Adding notification. Total:', prev.length + 1);
         return [notification, ...prev];
       });
       
       setUnreadCount(prev => {
         const newCount = prev + 1;
-        console.log('[Pusher] 🔔 Unread count:', newCount);
         return newCount;
       });
 
@@ -127,7 +124,6 @@ export function PusherProvider({ children }) {
     });
 
     storeChannel.bind('store-status', (data) => {
-      console.log('[Pusher] 🏪 Store status update received:', data);
       setStoreStatus(data.isOpen);
 
       if (user?.role !== 'VENDOR') {

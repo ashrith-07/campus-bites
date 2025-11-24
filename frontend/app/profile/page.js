@@ -66,7 +66,15 @@ export default function ProfilePage() {
     
       <header className="bg-card border-b border-border shadow-sm">
         <div className="max-w-4xl mx-auto px-6 py-4">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <button
+              onClick={() => router.back()}
+              className="p-2 hover:bg-muted rounded-full transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6" />
+            </button>
           <h1 className="font-serif text-2xl font-bold text-foreground">My Profile</h1>
+        </div>
         </div>
       </header>
 

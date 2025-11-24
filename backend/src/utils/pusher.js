@@ -12,7 +12,6 @@ const pusher = new Pusher({
 const sendOrderUpdate = async (userId, data) => {
   try {
     await pusher.trigger(`user-${userId}`, 'order-update', data);
-    console.log(`[Pusher] ✅ Order update sent to user ${userId}:`, data);
     return true;
   } catch (error) {
     console.error(`[Pusher] ❌ Failed to send order update to user ${userId}:`, error);
@@ -24,7 +23,6 @@ const sendOrderUpdate = async (userId, data) => {
 const broadcastStoreStatus = async (data) => {
   try {
     await pusher.trigger('store-updates', 'store-status', data);
-    console.log(`[Pusher] ✅ Store status broadcasted:`, data);
     return true;
   } catch (error) {
     console.error(`[Pusher] ❌ Failed to broadcast store status:`, error);
