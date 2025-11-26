@@ -169,7 +169,7 @@ export function PusherProvider({ children }) {
   };
 
   const markAllAsRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    setNotifications([]);
     setUnreadCount(0);
   };
 
