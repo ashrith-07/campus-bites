@@ -40,8 +40,7 @@ const signup = async (req, res) => {
       { expiresIn: '7d' }
     );
 
-    console.log('[Auth] ✅ User signed up:', { id: user.id, email: user.email, role: user.role });
-
+    
     res.status(201).json({
       token,
       user: {
@@ -88,7 +87,7 @@ const login = async (req, res) => {
       { expiresIn: '7d' }
     );
 
-    console.log('[Auth] ✅ User logged in:', { id: user.id, email: user.email, role: user.role });
+    
 
     res.json({
       token,

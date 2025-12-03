@@ -84,7 +84,6 @@ export function PusherProvider({ children }) {
     });
 
     userChannel.bind('order-update', (data) => {
-      console.log('[Pusher] 📦 Order update received:', data);
       
       const notification = {
         id: Date.now(),
