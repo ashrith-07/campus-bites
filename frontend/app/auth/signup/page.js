@@ -24,13 +24,11 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12">
-      <div className="bg-card w-full max-w-md shadow-elegant rounded-2xl p-8">
+    <div className="min-h-screen bg-background flex items-center justify-center px-4 py-8">
+      <div className="max-w-md w-full bg-card rounded-2xl p-8 shadow-elegant border border-border">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-serif text-foreground">Join Campus Bites</h1>
-          <p className="text-muted-foreground">
-            Create an account to start ordering delicious meals
-          </p>
+          <h1 className="font-serif text-3xl font-bold text-foreground mb-2">Join Campus Bites</h1>
+          <p className="text-muted-foreground">Create an account to start ordering delicious meals</p>
         </div>
 
         {error && (
@@ -41,7 +39,7 @@ export default function SignupPage() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-foreground mb-1">Full Name</label>
+            <label className="block text-sm font-semibold text-foreground mb-2">Full Name</label>
             <input
               type="text"
               value={formData.name}
@@ -55,7 +53,7 @@ export default function SignupPage() {
           </div>
 
           <div>
-            <label className="block text-foreground mb-1">Email</label>
+            <label className="block text-sm font-semibold text-foreground mb-2">Email</label>
             <input
               type="email"
               value={formData.email}
@@ -69,7 +67,7 @@ export default function SignupPage() {
           </div>
 
           <div>
-            <label className="block text-foreground mb-1">Password</label>
+            <label className="block text-sm font-semibold text-foreground mb-2">Password</label>
             <input
               type="password"
               value={formData.password}
@@ -85,7 +83,7 @@ export default function SignupPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-primary text-primary-foreground py-3 rounded-lg font-medium hover:bg-primary/90 transition-elegant disabled:opacity-50"
+            className="w-full bg-secondary text-secondary-foreground py-3 rounded-xl font-bold text-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Creating Account...' : 'Create Account'}
           </button>
