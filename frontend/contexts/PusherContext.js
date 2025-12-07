@@ -13,9 +13,12 @@ export function PusherProvider({ children }) {
   const [unreadCount, setUnreadCount] = useState(0);
   const [storeStatus, setStoreStatus] = useState(true);
   const [orderUpdates, setOrderUpdates] = useState({});
-  
   const [newVendorOrders, setNewVendorOrders] = useState([]);
+  
+  
+  const [vendorOrdersRefreshTrigger, setVendorOrdersRefreshTrigger] = useState(0);
 
+  
   useEffect(() => {
     console.log('[Pusher] 🚀 Initializing Pusher client...');
     
@@ -45,6 +48,7 @@ export function PusherProvider({ children }) {
       pusherClient.disconnect();
     };
   }, []);
+
 
   useEffect(() => {
     if (!pusher || !user) return;
@@ -77,6 +81,7 @@ export function PusherProvider({ children }) {
         [data.orderId]: data
       }));
 
+ 
       window.dispatchEvent(new CustomEvent('show-notification', {
         detail: notification
       }));
@@ -88,6 +93,7 @@ export function PusherProvider({ children }) {
     };
   }, [pusher, user]);
 
+  
   useEffect(() => {
     if (!pusher || !user || user.role !== 'VENDOR') return;
 
@@ -101,7 +107,7 @@ export function PusherProvider({ children }) {
     });
 
     channel.bind('new-order', (data) => {
-      console.log('[Pusher] 🆕 New order received for vendor:', data);
+      console.log('[Pusher] 🆕 NEW ORDER RECEIVED:', data);
       
       const notification = {
         id: Date.now(),
@@ -116,6 +122,9 @@ export function PusherProvider({ children }) {
       setNotifications(prev => [notification, ...prev]);
       setUnreadCount(prev => prev + 1);
       setNewVendorOrders(prev => [data, ...prev]);
+      
+      setVendorOrdersRefreshTrigger(Date.now());
+      console.log('[Pusher] 🔔 Vendor refresh triggered at:', Date.now());
 
       window.dispatchEvent(new CustomEvent('show-notification', {
         detail: notification
@@ -213,7 +222,6 @@ export function PusherProvider({ children }) {
       detail: testNotif
     }));
 
-    console.log('[Pusher] ✅ Test notification dispatched');
   }, []);
 
   const value = {
@@ -221,12 +229,13 @@ export function PusherProvider({ children }) {
     notifications,
     unreadCount,
     storeStatus,
-    newVendorOrders, 
+    newVendorOrders,
+    vendorOrdersRefreshTrigger, 
     markAsRead,
     markAllAsRead,
     getOrderUpdate,
     updateStoreStatus,
-    clearNewVendorOrders, 
+    clearNewVendorOrders,
     testNotification
   };
 

@@ -244,30 +244,30 @@ function OrdersManagement({ token }) {
   const [loading, setLoading] = useState(true);
   const [expandedOrder, setExpandedOrder] = useState(null);
   
- 
-  const { newVendorOrders } = useSocket();
+  const { newVendorOrders, vendorOrdersRefreshTrigger } = useSocket();
 
   useEffect(() => {
+    console.log('[OrdersManagement] 📥 Initial fetch');
     fetchOrders();
   }, []);
 
- 
   useEffect(() => {
-    if (newVendorOrders.length > 0) {
-      console.log('[OrdersManagement] 🆕 New order detected, refreshing...');
+    if (vendorOrdersRefreshTrigger > 0) {
+      console.log('[OrdersManagement] 🔔 Refresh trigger fired:', vendorOrdersRefreshTrigger);
       fetchOrders();
     }
-  }, [newVendorOrders]);
+  }, [vendorOrdersRefreshTrigger]);
 
   const fetchOrders = async () => {
     try {
+      console.log('[OrdersManagement] 🔄 Fetching orders...');
       const response = await fetch('https://campus-bites-server.vercel.app/api/orders', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
       setOrders(data.orders || []);
     } catch (error) {
-      console.error('Error fetching orders:', error);
+      console.error('[OrdersManagement] ❌ Error fetching orders:', error);
     } finally {
       setLoading(false);
     }
@@ -312,9 +312,8 @@ function OrdersManagement({ token }) {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="font-serif text-lg sm:text-xl font-bold">Orders Management</h2>
-            <p className="text-sm text-muted-foreground">View and manage all incoming orders</p>
+            <p className="text-sm text-muted-foreground">View and manage all incoming orders • Total: {orders.length}</p>
           </div>
-          {/* ⭐ Live indicator */}
           <div className="flex items-center gap-2 text-sm">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
             <span className="text-muted-foreground hidden sm:inline">Live</span>
@@ -485,7 +484,6 @@ function OrdersManagement({ token }) {
     </div>
   );
 }
-
 
 function MenuManagement({ token }) {
   const [menuItems, setMenuItems] = useState([]);
