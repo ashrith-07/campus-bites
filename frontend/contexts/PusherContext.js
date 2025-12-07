@@ -1,225 +1,237 @@
 'use client';
-
-import { createContext, useContext, useEffect, useState, useRef } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 import Pusher from 'pusher-js';
-import { useAuth } from './AuthContext';
 
 const PusherContext = createContext();
 
 export function PusherProvider({ children }) {
-  const { user, token } = useAuth();
+  const { user } = useAuth();
+  const [pusher, setPusher] = useState(null);
+  const [isConnected, setIsConnected] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [orderUpdates, setOrderUpdates] = useState({});
   const [storeStatus, setStoreStatus] = useState(true);
-  const [isConnected, setIsConnected] = useState(false);
-  const pusherRef = useRef(null);
-  const pollingIntervalRef = useRef(null);
-
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://campus-bites-server.vercel.app/api';
-
- 
-  const pollStoreStatus = async () => {
-    try {
-      const response = await fetch(`${API_URL}/store/status`);
-      if (response.ok) {
-        const data = await response.json();
-        setStoreStatus(data.isOpen);
-      }
-    } catch (error) {
-      console.error('[Poll] Error fetching store status:', error);
-    }
-  };
-
+  const [orderUpdates, setOrderUpdates] = useState({});
   
+  const [newVendorOrders, setNewVendorOrders] = useState([]);
+
   useEffect(() => {
-    pollStoreStatus();
-    pollingIntervalRef.current = setInterval(pollStoreStatus, 10000);
-
-    return () => {
-      if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current);
-      }
-    };
-  }, []);
-
-  
-  useEffect(() => {
-    if (!token || !user) {
-      console.log('[Pusher] ⚠️ No token or user, skipping connection');
-      if (pusherRef.current) {
-        pusherRef.current.disconnect();
-        pusherRef.current = null;
-      }
-      return;
-    }
-
-    const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY, {
+    console.log('[Pusher] 🚀 Initializing Pusher client...');
+    
+    const pusherClient = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY, {
       cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER,
-      encrypted: true
+      forceTLS: true
     });
 
-    pusherRef.current = pusher;
-
-  
-    pusher.connection.bind('connected', () => {
+    pusherClient.connection.bind('connected', () => {
+      console.log('[Pusher] ✅ Connected to Pusher');
       setIsConnected(true);
     });
 
-    pusher.connection.bind('disconnected', () => {
-      console.log('[Pusher] ❌ Disconnected');
+    pusherClient.connection.bind('disconnected', () => {
+      console.log('[Pusher] ❌ Disconnected from Pusher');
       setIsConnected(false);
     });
 
-    pusher.connection.bind('error', (error) => {
-      console.error('[Pusher] ⚠️ Connection error:', error);
-      setIsConnected(false);
+    pusherClient.connection.bind('error', (err) => {
+      console.error('[Pusher] ⚠️ Connection error:', err);
     });
 
-  
-    const userChannel = pusher.subscribe(`user-${user.id}`);
+    setPusher(pusherClient);
+
+    return () => {
+      console.log('[Pusher] 🔌 Cleaning up Pusher connection');
+      pusherClient.disconnect();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!pusher || !user) return;
+
+    const channelName = `user-${user.id}`;
+    console.log('[Pusher] 📡 Subscribing to channel:', channelName);
     
-    userChannel.bind('pusher:subscription_succeeded', () => {
-      console.log(`[Pusher] ✅ Subscribed to user-${user.id}`);
+    const channel = pusher.subscribe(channelName);
+
+    channel.bind('pusher:subscription_succeeded', () => {
+      console.log('[Pusher] ✅ Successfully subscribed to', channelName);
     });
 
-    userChannel.bind('order-update', (data) => {
+    channel.bind('order-update', (data) => {
+      console.log('[Pusher] 📨 Order update received:', data);
       
       const notification = {
         id: Date.now(),
         orderId: data.orderId,
         status: data.status,
         message: data.message,
-        timestamp: new Date(),
-        read: false,
-        type: 'order-update'
+        timestamp: data.timestamp || new Date().toISOString(),
+        read: false
       };
 
-      setNotifications(prev => {
-        return [notification, ...prev];
-      });
-      
-      setUnreadCount(prev => {
-        const newCount = prev + 1;
-        return newCount;
-      });
-
+      setNotifications(prev => [notification, ...prev]);
+      setUnreadCount(prev => prev + 1);
       setOrderUpdates(prev => ({
         ...prev,
-        [data.orderId]: {
-          status: data.status,
-          timestamp: new Date()
-        }
+        [data.orderId]: data
       }));
 
-      showToast(notification);
+      window.dispatchEvent(new CustomEvent('show-notification', {
+        detail: notification
+      }));
     });
 
+    return () => {
+      console.log('[Pusher] 🔇 Unsubscribing from', channelName);
+      pusher.unsubscribe(channelName);
+    };
+  }, [pusher, user]);
+
+  useEffect(() => {
+    if (!pusher || !user || user.role !== 'VENDOR') return;
+
+    const vendorChannel = 'vendor-orders';
+    console.log('[Pusher] 📡 Vendor subscribing to:', vendorChannel);
     
-    const storeChannel = pusher.subscribe('store-updates');
-    
-    storeChannel.bind('pusher:subscription_succeeded', () => {
-      console.log('[Pusher] ✅ Subscribed to store-updates');
+    const channel = pusher.subscribe(vendorChannel);
+
+    channel.bind('pusher:subscription_succeeded', () => {
+      console.log('[Pusher] ✅ Vendor subscribed to', vendorChannel);
     });
 
-    storeChannel.bind('store-status', (data) => {
+    channel.bind('new-order', (data) => {
+      console.log('[Pusher] 🆕 New order received for vendor:', data);
+      
+      const notification = {
+        id: Date.now(),
+        orderId: data.orderId,
+        status: 'PENDING',
+        message: data.message || `New order #${data.orderId} from ${data.customerName}`,
+        timestamp: data.timestamp || new Date().toISOString(),
+        read: false,
+        type: 'new-order'
+      };
+
+      setNotifications(prev => [notification, ...prev]);
+      setUnreadCount(prev => prev + 1);
+      setNewVendorOrders(prev => [data, ...prev]);
+
+      window.dispatchEvent(new CustomEvent('show-notification', {
+        detail: notification
+      }));
+
+      try {
+        const audio = new Audio('/notification.mp3');
+        audio.play().catch(e => console.log('Audio play failed:', e));
+      } catch (e) {
+        console.log('Audio not available');
+      }
+    });
+
+    return () => {
+      console.log('[Pusher] 🔇 Vendor unsubscribing from', vendorChannel);
+      pusher.unsubscribe(vendorChannel);
+    };
+  }, [pusher, user]);
+
+  useEffect(() => {
+    if (!pusher) return;
+
+    const storeChannel = 'store-channel';
+    console.log('[Pusher] 📡 Subscribing to:', storeChannel);
+    
+    const channel = pusher.subscribe(storeChannel);
+
+    channel.bind('status-change', (data) => {
+      console.log('[Pusher] 🏪 Store status changed:', data.isOpen);
       setStoreStatus(data.isOpen);
 
-      if (user?.role !== 'VENDOR') {
-        const message = data.isOpen 
-          ? '🎉 Store is now open! You can place orders.' 
-          : '🔒 Store is now closed. Orders are temporarily unavailable.';
-        
-        const notification = {
-          id: Date.now(),
-          message,
-          timestamp: new Date(),
-          type: 'store-status',
-          read: false
-        };
-        
-        setNotifications(prev => [notification, ...prev]);
-        showToast(notification);
-      }
+      const notification = {
+        id: Date.now(),
+        message: data.isOpen 
+          ? '🎉 Store is now OPEN! Start ordering!' 
+          : '🔒 Store is now CLOSED. Check back later!',
+        timestamp: new Date().toISOString(),
+        read: false,
+        type: 'store-status'
+      };
+
+      setNotifications(prev => [notification, ...prev]);
+      setUnreadCount(prev => prev + 1);
+
+      window.dispatchEvent(new CustomEvent('show-notification', {
+        detail: notification
+      }));
     });
 
-  
     return () => {
-      console.log('[Pusher] 🔌 Disconnecting...');
-      if (pusher) {
-        pusher.unsubscribe(`user-${user.id}`);
-        pusher.unsubscribe('store-updates');
-        pusher.disconnect();
-      }
+      console.log('[Pusher] 🔇 Unsubscribing from', storeChannel);
+      pusher.unsubscribe(storeChannel);
     };
-  }, [token, user, API_URL]);
+  }, [pusher]);
 
-  const showToast = (notification) => {
-    console.log('[Toast] 🍞 Showing toast:', notification);
-    const event = new CustomEvent('show-notification', { detail: notification });
-    window.dispatchEvent(event);
-  };
-
-  const markAsRead = (notificationId) => {
-    setNotifications(prev =>
+  const markAsRead = useCallback((notificationId) => {
+    setNotifications(prev => 
       prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
     );
     setUnreadCount(prev => Math.max(0, prev - 1));
-  };
+  }, []);
 
-  const markAllAsRead = () => {
-    setNotifications([]);
+  const markAllAsRead = useCallback(() => {
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
     setUnreadCount(0);
-  };
+  }, []);
 
-  const clearNotifications = () => {
-    setNotifications([]);
-    setUnreadCount(0);
-  };
-
-  const getOrderUpdate = (orderId) => {
+  const getOrderUpdate = useCallback((orderId) => {
     return orderUpdates[orderId] || null;
-  };
+  }, [orderUpdates]);
 
-  const updateStoreStatus = (newStatus) => {
-    setStoreStatus(newStatus);
-  };
+  const updateStoreStatus = useCallback((isOpen) => {
+    setStoreStatus(isOpen);
+  }, []);
 
-  
-  const testNotification = () => {
+  const clearNewVendorOrders = useCallback(() => {
+    setNewVendorOrders([]);
+  }, []);
+
+  const testNotification = useCallback(() => {
+    console.log('[Pusher] 🧪 Testing notification system...');
     const testNotif = {
       id: Date.now(),
       orderId: 999,
-      status: 'READY',
-      message: '🧪 Test notification - Your order is ready!',
-      timestamp: new Date(),
-      read: false,
-      type: 'order-update'
+      status: 'PROCESSING',
+      message: 'This is a test notification! Your order is being prepared.',
+      timestamp: new Date().toISOString(),
+      read: false
     };
-    
+
     setNotifications(prev => [testNotif, ...prev]);
     setUnreadCount(prev => prev + 1);
-    showToast(testNotif);
-    
-    console.log('[Debug] 🧪 Test notification sent!');
+
+    window.dispatchEvent(new CustomEvent('show-notification', {
+      detail: testNotif
+    }));
+
+    console.log('[Pusher] ✅ Test notification dispatched');
+  }, []);
+
+  const value = {
+    isConnected,
+    notifications,
+    unreadCount,
+    storeStatus,
+    newVendorOrders, 
+    markAsRead,
+    markAllAsRead,
+    getOrderUpdate,
+    updateStoreStatus,
+    clearNewVendorOrders, 
+    testNotification
   };
 
   return (
-    <PusherContext.Provider
-      value={{
-        notifications,
-        unreadCount,
-        markAsRead,
-        markAllAsRead,
-        clearNotifications,
-        getOrderUpdate,
-        orderUpdates,
-        storeStatus,
-        updateStoreStatus,
-        isConnected,
-        testNotification
-      }}
-    >
+    <PusherContext.Provider value={value}>
       {children}
     </PusherContext.Provider>
   );
@@ -232,6 +244,5 @@ export const usePusher = () => {
   }
   return context;
 };
-
 
 export const useSocket = usePusher;

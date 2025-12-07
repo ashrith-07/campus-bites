@@ -186,46 +186,56 @@ export default function VendorDashboard() {
         </div>
       )}
 
-    
-      <div className="border-b border-border bg-card sticky top-[65px] sm:top-[73px] z-30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="flex gap-1 overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
-            <button
-              onClick={() => setActiveTab('orders')}
-              className={`flex items-center gap-2 px-4 sm:px-6 py-3 font-semibold transition-all border-b-2 whitespace-nowrap text-xs sm:text-base ${
-                activeTab === 'orders'
-                  ? 'border-secondary text-secondary'
-                  : 'border-transparent text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <Package className="w-4 h-4 sm:w-5 sm:h-5" />
-              <span>Orders</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('menu')}
-              className={`flex items-center gap-2 px-4 sm:px-6 py-3 font-semibold transition-all border-b-2 whitespace-nowrap text-xs sm:text-base ${
-                activeTab === 'menu'
-                  ? 'border-secondary text-secondary'
-                  : 'border-transparent text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <ChefHat className="w-4 h-4 sm:w-5 sm:h-5" />
-              <span>Menu</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('status')}
-              className={`flex items-center gap-2 px-4 sm:px-6 py-3 font-semibold transition-all border-b-2 whitespace-nowrap text-xs sm:text-base ${
-                activeTab === 'status'
-                  ? 'border-secondary text-secondary'
-                  : 'border-transparent text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5" />
-              <span>Stats</span>
-            </button>
-          </div>
+    <div className="border-b border-border bg-card sticky top-[65px] sm:top-[73px] z-30">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="flex gap-1 overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
+          <button
+            onClick={() => {
+              setActiveTab('orders');
+              clearNewVendorOrders(); 
+            }}
+            className={`flex items-center gap-2 px-4 sm:px-6 py-3 font-semibold transition-all border-b-2 whitespace-nowrap text-xs sm:text-base relative ${
+              activeTab === 'orders'
+                ? 'border-secondary text-secondary'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <Package className="w-4 h-4 sm:w-5 sm:h-5" />
+            <span>Orders</span>
+
+            {newVendorOrders.length > 0 && activeTab !== 'orders' && (
+              <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1.5 animate-pulse">
+                {newVendorOrders.length}
+              </span>
+            )}
+          </button>
+          
+          <button
+            onClick={() => setActiveTab('menu')}
+            className={`flex items-center gap-2 px-4 sm:px-6 py-3 font-semibold transition-all border-b-2 whitespace-nowrap text-xs sm:text-base ${
+              activeTab === 'menu'
+                ? 'border-secondary text-secondary'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <ChefHat className="w-4 h-4 sm:w-5 sm:h-5" />
+            <span>Menu</span>
+          </button>
+          
+          <button
+            onClick={() => setActiveTab('status')}
+            className={`flex items-center gap-2 px-4 sm:px-6 py-3 font-semibold transition-all border-b-2 whitespace-nowrap text-xs sm:text-base ${
+              activeTab === 'status'
+                ? 'border-secondary text-secondary'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5" />
+            <span>Stats</span>
+          </button>
         </div>
       </div>
+    </div>
 
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6">

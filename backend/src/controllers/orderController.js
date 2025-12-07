@@ -82,12 +82,28 @@ const confirmOrder = async (req, res) => {
       }
     });
 
-    
     if (global.sendOrderUpdate) {
       await global.sendOrderUpdate(userId, {
         orderId: order.id,
         status: 'PENDING',
         message: `Your order #${order.id} has been placed successfully!`,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    if (global.sendVendorOrderAlert) {
+      await global.sendVendorOrderAlert({
+        orderId: order.id,
+        customerName: order.user.name,
+        customerEmail: order.user.email,
+        total: order.total,
+        itemCount: order.items.length,
+        items: order.items.map(item => ({
+          name: item.menuItem.name,
+          quantity: item.quantity,
+          price: item.menuItem.price
+        })),
+        message: `New order #${order.id} from ${order.user.name}`,
         timestamp: new Date().toISOString()
       });
     }
@@ -237,7 +253,6 @@ const updateOrderStatus = async (req, res) => {
       'CANCELLED': `Your order #${orderId} has been cancelled`
     };
 
-   
     if (global.sendOrderUpdate) {
       await global.sendOrderUpdate(existingOrder.userId, {
         orderId,
@@ -282,7 +297,6 @@ const deleteOrder = async (req, res) => {
     await prisma.orderItem.deleteMany({ where: { orderId } });
     await prisma.order.delete({ where: { id: orderId } });
 
-    
     if (req.user.role === 'VENDOR' && global.sendOrderUpdate) {
       await global.sendOrderUpdate(order.userId, {
         orderId,

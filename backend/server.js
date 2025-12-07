@@ -40,13 +40,13 @@ app.use(cors({
 app.use(express.json()); 
 
 
-const { sendOrderUpdate, broadcastStoreStatus } = require('./src/utils/pusher');
-
+const { sendOrderUpdate, sendVendorOrderAlert, broadcastStoreStatus } = require('./src/utils/pusher');
 
 global.sendOrderUpdate = sendOrderUpdate;
+global.sendVendorOrderAlert = sendVendorOrderAlert; 
 global.broadcastStoreStatus = broadcastStoreStatus;
 
-console.log('[Pusher] ✅ Real-time updates configured with Pusher');
+
 
 app.use('/api/auth', authRouter);
 app.use('/api/menu', menuRouter);
@@ -60,10 +60,10 @@ app.get('/api/status', (req, res) => {
     message: 'Campus Bites API is running smoothly!', 
     service: 'Backend',
     realtimeProvider: 'Pusher',
+    features: ['Customer Notifications', 'Vendor Alerts', 'Store Status'],
     timestamp: new Date().toISOString()
   });
 });
-
 
 app.get('/', (req, res) => {
   res.json({ 
@@ -75,8 +75,5 @@ app.get('/', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`🚀 Backend server listening on http://localhost:${PORT}`);
-  console.log(`📡 Real-time updates powered by Pusher`);
-  console.log(`🏪 Store status endpoint: http://localhost:${PORT}/api/store/status`);
-  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`Backend server listening on http://localhost:${PORT}`);
 });
