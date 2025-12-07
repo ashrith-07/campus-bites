@@ -74,11 +74,9 @@ export default function VendorDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      
       <header className="bg-card border-b border-border sticky top-0 z-40 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center justify-between gap-3 sm:gap-4">
-         
             <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
               <Link
                 href="/"
@@ -97,9 +95,7 @@ export default function VendorDashboard() {
               </div>
             </div>
 
-           
             <div className="hidden md:flex items-center gap-3">
-              
               <div className="flex items-center gap-2 px-3 py-2 bg-muted rounded-lg">
                 <span className="text-sm font-semibold whitespace-nowrap">Store:</span>
                 <button
@@ -133,7 +129,6 @@ export default function VendorDashboard() {
               </button>
             </div>
 
-          
             <button
               onClick={() => setShowMobileMenu(!showMobileMenu)}
               className="md:hidden p-2 hover:bg-muted rounded-full transition-colors flex-shrink-0"
@@ -142,7 +137,6 @@ export default function VendorDashboard() {
             </button>
           </div>
 
-          
           <div className="md:hidden mt-3 flex items-center justify-between p-3 bg-muted rounded-lg">
             <span className="text-sm font-semibold">Store Status:</span>
             <div className="flex items-center gap-2">
@@ -164,7 +158,6 @@ export default function VendorDashboard() {
         </div>
       </header>
 
-      
       {showMobileMenu && (
         <div className="fixed inset-0 z-50 md:hidden">
           <div className="absolute inset-0 bg-black/50" onClick={() => setShowMobileMenu(false)} />
@@ -186,58 +179,56 @@ export default function VendorDashboard() {
         </div>
       )}
 
-    <div className="border-b border-border bg-card sticky top-[65px] sm:top-[73px] z-30">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6">
-        <div className="flex gap-1 overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
-          <button
-            onClick={() => {
-              setActiveTab('orders');
-              clearNewVendorOrders(); 
-            }}
-            className={`flex items-center gap-2 px-4 sm:px-6 py-3 font-semibold transition-all border-b-2 whitespace-nowrap text-xs sm:text-base relative ${
-              activeTab === 'orders'
-                ? 'border-secondary text-secondary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <Package className="w-4 h-4 sm:w-5 sm:h-5" />
-            <span>Orders</span>
-
-            {newVendorOrders.length > 0 && activeTab !== 'orders' && (
-              <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1.5 animate-pulse">
-                {newVendorOrders.length}
-              </span>
-            )}
-          </button>
-          
-          <button
-            onClick={() => setActiveTab('menu')}
-            className={`flex items-center gap-2 px-4 sm:px-6 py-3 font-semibold transition-all border-b-2 whitespace-nowrap text-xs sm:text-base ${
-              activeTab === 'menu'
-                ? 'border-secondary text-secondary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <ChefHat className="w-4 h-4 sm:w-5 sm:h-5" />
-            <span>Menu</span>
-          </button>
-          
-          <button
-            onClick={() => setActiveTab('status')}
-            className={`flex items-center gap-2 px-4 sm:px-6 py-3 font-semibold transition-all border-b-2 whitespace-nowrap text-xs sm:text-base ${
-              activeTab === 'status'
-                ? 'border-secondary text-secondary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5" />
-            <span>Stats</span>
-          </button>
+      <div className="border-b border-border bg-card sticky top-[65px] sm:top-[73px] z-30">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <div className="flex gap-1 overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
+            <button
+              onClick={() => {
+                setActiveTab('orders');
+                clearNewVendorOrders(); 
+              }}
+              className={`flex items-center gap-2 px-4 sm:px-6 py-3 font-semibold transition-all border-b-2 whitespace-nowrap text-xs sm:text-base relative ${
+                activeTab === 'orders'
+                  ? 'border-secondary text-secondary'
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Package className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span>Orders</span>
+              {newVendorOrders.length > 0 && activeTab !== 'orders' && (
+                <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1.5 animate-pulse">
+                  {newVendorOrders.length}
+                </span>
+              )}
+            </button>
+            
+            <button
+              onClick={() => setActiveTab('menu')}
+              className={`flex items-center gap-2 px-4 sm:px-6 py-3 font-semibold transition-all border-b-2 whitespace-nowrap text-xs sm:text-base ${
+                activeTab === 'menu'
+                  ? 'border-secondary text-secondary'
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <ChefHat className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span>Menu</span>
+            </button>
+            
+            <button
+              onClick={() => setActiveTab('status')}
+              className={`flex items-center gap-2 px-4 sm:px-6 py-3 font-semibold transition-all border-b-2 whitespace-nowrap text-xs sm:text-base ${
+                activeTab === 'status'
+                  ? 'border-secondary text-secondary'
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span>Stats</span>
+            </button>
+          </div>
         </div>
       </div>
-    </div>
 
-      
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
         {activeTab === 'orders' && <OrdersManagement token={token} />}
         {activeTab === 'menu' && <MenuManagement token={token} />}
@@ -247,14 +238,26 @@ export default function VendorDashboard() {
   );
 }
 
+
 function OrdersManagement({ token }) {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedOrder, setExpandedOrder] = useState(null);
+  
+ 
+  const { newVendorOrders } = useSocket();
 
   useEffect(() => {
     fetchOrders();
   }, []);
+
+ 
+  useEffect(() => {
+    if (newVendorOrders.length > 0) {
+      console.log('[OrdersManagement] 🆕 New order detected, refreshing...');
+      fetchOrders();
+    }
+  }, [newVendorOrders]);
 
   const fetchOrders = async () => {
     try {
@@ -306,8 +309,17 @@ function OrdersManagement({ token }) {
   return (
     <div>
       <div className="bg-card rounded-2xl p-4 sm:p-6 shadow-elegant border border-border">
-        <h2 className="font-serif text-lg sm:text-xl font-bold mb-4">Orders Management</h2>
-        <p className="text-sm text-muted-foreground mb-6">View and manage all incoming orders</p>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="font-serif text-lg sm:text-xl font-bold">Orders Management</h2>
+            <p className="text-sm text-muted-foreground">View and manage all incoming orders</p>
+          </div>
+          {/* ⭐ Live indicator */}
+          <div className="flex items-center gap-2 text-sm">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            <span className="text-muted-foreground hidden sm:inline">Live</span>
+          </div>
+        </div>
 
         {orders.length === 0 ? (
           <div className="text-center py-12">
@@ -317,14 +329,26 @@ function OrdersManagement({ token }) {
         ) : (
           <div className="space-y-4">
             {orders.map((order) => (
-              <div key={order.id} className="border border-border rounded-xl overflow-hidden bg-muted/20">
-               
+              <div 
+                key={order.id} 
+                className={`border border-border rounded-xl overflow-hidden bg-muted/20 transition-all ${
+                  newVendorOrders.some(o => o.orderId === order.id) 
+                    ? 'ring-2 ring-secondary' 
+                    : ''
+                }`}
+              >
                 <div className="p-4">
-                 
                   <div className="flex items-center justify-between mb-3">
                     <div>
                       <p className="text-xs text-muted-foreground">Order ID</p>
-                      <p className="font-bold text-foreground">#{order.id}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-bold text-foreground">#{order.id}</p>
+                        {newVendorOrders.some(o => o.orderId === order.id) && (
+                          <span className="bg-secondary text-secondary-foreground text-xs font-bold px-2 py-0.5 rounded-full animate-pulse">
+                            NEW
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
                       order.status === 'COMPLETED' ? 'bg-success/10 text-success' :
@@ -337,7 +361,6 @@ function OrdersManagement({ token }) {
                     </span>
                   </div>
 
-                 
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex-1 min-w-0">
                       <p className="text-xs text-muted-foreground">Customer</p>
@@ -356,7 +379,6 @@ function OrdersManagement({ token }) {
                     </div>
                   </div>
 
-                
                   <div className="flex items-center justify-between mb-3">
                     <button
                       onClick={() => toggleOrderDetails(order.id)}
@@ -380,7 +402,6 @@ function OrdersManagement({ token }) {
                     </div>
                   </div>
 
-              
                   <div>
                     <p className="text-xs text-muted-foreground mb-1">Update Status</p>
                     <select
@@ -397,7 +418,6 @@ function OrdersManagement({ token }) {
                   </div>
                 </div>
 
-               
                 {expandedOrder === order.id && (
                   <div className="border-t border-border bg-card">
                     <div className="p-4">
@@ -405,11 +425,7 @@ function OrdersManagement({ token }) {
                       <div className="space-y-3">
                         {order.items && order.items.length > 0 ? (
                           order.items.map((item, index) => (
-                            <div
-                              key={index}
-                              className="bg-muted/50 rounded-lg p-3 border border-border"
-                            >
-                             
+                            <div key={index} className="bg-muted/50 rounded-lg p-3 border border-border">
                               <div className="flex items-start gap-3 mb-2">
                                 {item.menuItem?.imageUrl && (
                                   <img
@@ -427,7 +443,6 @@ function OrdersManagement({ token }) {
                                   </p>
                                 </div>
                               </div>
-                              
                               
                               <div className="flex items-center justify-between text-xs">
                                 <div className="flex items-center gap-4">
@@ -452,7 +467,6 @@ function OrdersManagement({ token }) {
                           <p className="text-muted-foreground text-center py-4 text-sm">No items found</p>
                         )}
                       </div>
-                      
                       
                       <div className="mt-4 pt-4 border-t border-border">
                         <div className="flex justify-between items-center">
