@@ -10,7 +10,7 @@ import Link from 'next/link';
 export default function VendorDashboard() {
   const router = useRouter();
   const { user, token, logout, loading: authLoading } = useAuth();
-  const { storeStatus, updateStoreStatus } = useSocket();
+  const { storeStatus, updateStoreStatus, newVendorOrders, clearNewVendorOrders } = useSocket();
   const [activeTab, setActiveTab] = useState('orders');
   const [showMobileMenu, setShowMobileMenu] = useState(false);
 
