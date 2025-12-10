@@ -1,12 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const { getStoreStatus, updateStoreStatus } = require('../controllers/storeController');
-const { authenticateToken, checkVendorRole } = require('../middleware/auth');
-
+const { authenticateToken } = require('../middleware/auth');
 
 router.get('/status', getStoreStatus);
 
-
-router.post('/status', authenticateToken, checkVendorRole, updateStoreStatus);
+router.post('/status', authenticateToken, updateStoreStatus);
 
 module.exports = router;

@@ -11,14 +11,39 @@ export function PusherProvider({ children }) {
   const [isConnected, setIsConnected] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [storeStatus, setStoreStatus] = useState(true);
+  const [storeStatus, setStoreStatus] = useState(null); 
+  const [storeStatusLoading, setStoreStatusLoading] = useState(true); 
   const [orderUpdates, setOrderUpdates] = useState({});
   const [newVendorOrders, setNewVendorOrders] = useState([]);
-  
-  
   const [vendorOrdersRefreshTrigger, setVendorOrdersRefreshTrigger] = useState(0);
 
-  
+  useEffect(() => {
+    const fetchStoreStatus = async () => {
+      try {
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://campus-bites-server.vercel.app/api';
+        console.log('[Store] 🔍 Fetching initial store status...');
+        
+        const response = await fetch(`${API_URL}/store/status`);
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log('[Store] ✅ Initial status fetched:', data.isOpen);
+          setStoreStatus(data.isOpen);
+        } else {
+          console.log('[Store] ⚠️ Failed to fetch status, defaulting to true');
+          setStoreStatus(true);
+        }
+      } catch (error) {
+        console.error('[Store] ❌ Error fetching status:', error);
+        setStoreStatus(true); 
+      } finally {
+        setStoreStatusLoading(false);
+      }
+    };
+
+    fetchStoreStatus();
+  }, []);
+
   useEffect(() => {
     console.log('[Pusher] 🚀 Initializing Pusher client...');
     
@@ -48,7 +73,6 @@ export function PusherProvider({ children }) {
       pusherClient.disconnect();
     };
   }, []);
-
 
   useEffect(() => {
     if (!pusher || !user) return;
@@ -81,7 +105,6 @@ export function PusherProvider({ children }) {
         [data.orderId]: data
       }));
 
- 
       window.dispatchEvent(new CustomEvent('show-notification', {
         detail: notification
       }));
@@ -93,7 +116,6 @@ export function PusherProvider({ children }) {
     };
   }, [pusher, user]);
 
-  
   useEffect(() => {
     if (!pusher || !user || user.role !== 'VENDOR') return;
 
@@ -122,8 +144,8 @@ export function PusherProvider({ children }) {
       setNotifications(prev => [notification, ...prev]);
       setUnreadCount(prev => prev + 1);
       setNewVendorOrders(prev => [data, ...prev]);
-      
       setVendorOrdersRefreshTrigger(Date.now());
+      
       console.log('[Pusher] 🔔 Vendor refresh triggered at:', Date.now());
 
       window.dispatchEvent(new CustomEvent('show-notification', {
@@ -166,19 +188,21 @@ export function PusherProvider({ children }) {
         type: 'store-status'
       };
 
-      setNotifications(prev => [notification, ...prev]);
-      setUnreadCount(prev => prev + 1);
+      if (user?.role !== 'VENDOR') {
+        setNotifications(prev => [notification, ...prev]);
+        setUnreadCount(prev => prev + 1);
 
-      window.dispatchEvent(new CustomEvent('show-notification', {
-        detail: notification
-      }));
+        window.dispatchEvent(new CustomEvent('show-notification', {
+          detail: notification
+        }));
+      }
     });
 
     return () => {
       console.log('[Pusher] 🔇 Unsubscribing from', storeChannel);
       pusher.unsubscribe(storeChannel);
     };
-  }, [pusher]);
+  }, [pusher, user]);
 
   const markAsRead = useCallback((notificationId) => {
     setNotifications(prev => 
@@ -222,6 +246,7 @@ export function PusherProvider({ children }) {
       detail: testNotif
     }));
 
+    console.log('[Pusher] ✅ Test notification dispatched');
   }, []);
 
   const value = {
@@ -229,8 +254,9 @@ export function PusherProvider({ children }) {
     notifications,
     unreadCount,
     storeStatus,
+    storeStatusLoading, 
     newVendorOrders,
-    vendorOrdersRefreshTrigger, 
+    vendorOrdersRefreshTrigger,
     markAsRead,
     markAllAsRead,
     getOrderUpdate,
