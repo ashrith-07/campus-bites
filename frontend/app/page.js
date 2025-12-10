@@ -11,11 +11,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useSocket } from '@/contexts/PusherContext';
 
 function HomeContent() {
-  const categories = ['All', 'Pizza', 'Rolls', 'Beverages', 'Desserts', 'Sandwiches', 'Snacks'];
+  const categories = ['All', 'Pizza', 'Rolls', 'Beverages', 'Desserts', 'Sandwiches', 'Snacks', 'Pasta'];
   const searchParams = useSearchParams();
   const searchQuery = searchParams.get('search') || '';
   const { user } = useAuth();
-  const { storeStatus } = useSocket();
+  
+  const { storeStatus, storeStatusLoading } = useSocket();
 
   const [menuItems, setMenuItems] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -66,11 +67,20 @@ function HomeContent() {
     fetchMenuItems();
   }, []);
 
- 
-  if (!storeStatus && user?.role !== 'VENDOR') {
-    return <StoreClosed />;
+  if (storeStatusLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-secondary border-t-transparent mx-auto mb-4"></div>
+          <p className="text-muted-foreground text-lg">Checking store status...</p>
+        </div>
+      </div>
+    );
   }
 
+  if (storeStatus === false && user?.role !== 'VENDOR') {
+    return <StoreClosed />;
+  }
 
   const filteredItems = menuItems.filter(item => {
     const matchesCategory = selectedCategory === 'All' || item.category === selectedCategory;
@@ -84,7 +94,6 @@ function HomeContent() {
 
   return (
     <div className="min-h-screen bg-background">
-
       <section className="bg-gradient-to-b from-muted to-background py-12 sm:py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 text-center">
           <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-3 sm:mb-4">
@@ -101,10 +110,8 @@ function HomeContent() {
         </div>
       </section>
 
-   
       <section className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         <div className="relative">
-
           <div className="overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
             <div className="flex gap-2 sm:gap-3 pb-4 min-w-max">
               {categories.map((category) => (
@@ -122,13 +129,10 @@ function HomeContent() {
               ))}
             </div>
           </div>
-
-        
           <div className="md:hidden absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-background to-transparent pointer-events-none" />
         </div>
       </section>
 
-     
       <section className="max-w-7xl mx-auto px-4 sm:px-6 pb-16">
         {loading ? (
           <div className="text-center py-12">
@@ -156,7 +160,6 @@ function HomeContent() {
         )}
       </section>
 
-      
       <CartSidebar />
     </div>
   );
@@ -167,7 +170,10 @@ export default function HomePage() {
     <Suspense
       fallback={
         <div className="min-h-screen bg-background flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-secondary border-t-transparent mx-auto"></div>
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-secondary border-t-transparent mx-auto mb-4"></div>
+            <p className="text-muted-foreground text-lg">Loading...</p>
+          </div>
         </div>
       }
     >

@@ -21,16 +21,16 @@ export function PusherProvider({ children }) {
     const fetchStoreStatus = async () => {
       try {
         const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://campus-bites-server.vercel.app/api';
-        console.log('[Store] 🔍 Fetching initial store status...');
+        
         
         const response = await fetch(`${API_URL}/store/status`);
         
         if (response.ok) {
           const data = await response.json();
-          console.log('[Store] ✅ Initial status fetched:', data.isOpen);
+         
           setStoreStatus(data.isOpen);
         } else {
-          console.log('[Store] ⚠️ Failed to fetch status, defaulting to true');
+         
           setStoreStatus(true);
         }
       } catch (error) {
@@ -78,7 +78,6 @@ export function PusherProvider({ children }) {
     if (!pusher || !user) return;
 
     const channelName = `user-${user.id}`;
-    console.log('[Pusher] 📡 Subscribing to channel:', channelName);
     
     const channel = pusher.subscribe(channelName);
 
@@ -170,7 +169,6 @@ export function PusherProvider({ children }) {
     if (!pusher) return;
 
     const storeChannel = 'store-channel';
-    console.log('[Pusher] 📡 Subscribing to:', storeChannel);
     
     const channel = pusher.subscribe(storeChannel);
 
@@ -199,7 +197,6 @@ export function PusherProvider({ children }) {
     });
 
     return () => {
-      console.log('[Pusher] 🔇 Unsubscribing from', storeChannel);
       pusher.unsubscribe(storeChannel);
     };
   }, [pusher, user]);
@@ -229,7 +226,6 @@ export function PusherProvider({ children }) {
   }, []);
 
   const testNotification = useCallback(() => {
-    console.log('[Pusher] 🧪 Testing notification system...');
     const testNotif = {
       id: Date.now(),
       orderId: 999,
@@ -246,7 +242,6 @@ export function PusherProvider({ children }) {
       detail: testNotif
     }));
 
-    console.log('[Pusher] ✅ Test notification dispatched');
   }, []);
 
   const value = {
