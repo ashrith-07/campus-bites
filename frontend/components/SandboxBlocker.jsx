@@ -3,18 +3,22 @@
 import { useEffect, useState } from 'react';
 
 export default function SandboxBlocker({ children }) {
-const [isSandboxed, setIsSandboxed] = useState(false);
+const [sandboxState, setSandboxState] = useState("checking");
+// checking | sandboxed | clean
 
 useEffect(() => {
 try {
 const sandbox = window.top !== window.self;
-setIsSandboxed(sandbox);
+setSandboxState(sandbox ? "sandboxed" : "clean");
 } catch (e) {
-setIsSandboxed(true); 
+setSandboxState("sandboxed");
 }
 }, []);
 
-if (isSandboxed) {
+// ⛔ Prevent ALL other code from running until we know
+if (sandboxState === "checking") return null;
+
+if (sandboxState === "sandboxed") {
 return (
 <div
 style={{
@@ -24,10 +28,11 @@ textAlign: 'center',
 lineHeight: '1.6',
 }}
 >
-Your browser has opened this page in a restricted view.<br />
-Please click the **Open in Browser** option to continue. </div>
+Your browser opened this page in a restricted (sandboxed) view. <br />
+Please tap **Open in Browser** to continue. </div>
 );
 }
 
+// safe → render app
 return children;
 }
